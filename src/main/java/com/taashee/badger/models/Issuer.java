@@ -18,7 +18,6 @@ public class Issuer {
 
     private String nameEnglish;
     private String descriptionEnglish;
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String imageEnglish;
     private String urlEnglish;
@@ -35,7 +34,6 @@ public class Issuer {
     @LastModifiedDate
     private LocalDateTime updatedAt;
     private String badgrApp;
-    @Lob
     private String oldJson;
     @OneToMany(mappedBy = "issuer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BadgeClass> badges;

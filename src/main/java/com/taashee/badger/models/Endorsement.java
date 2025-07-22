@@ -17,9 +17,7 @@ public class Endorsement {
     @JoinColumn(name = "endorsee_id", nullable = false)
     private BadgeClass endorsee;
 
-    @Lob
     private String claim;
-    @Lob
     private String description;
 
     public enum Status {

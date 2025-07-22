@@ -5,6 +5,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.Type;
+import com.taashee.badger.models.Institution;
 
 @Entity
 public class BadgeClass {
@@ -17,6 +20,7 @@ public class BadgeClass {
     private Issuer issuer;
 
     private String name;
+    @Column(columnDefinition = "TEXT")
     private String image;
     private String description;
     private String criteriaText;
@@ -39,7 +43,6 @@ public class BadgeClass {
     private boolean stackable;
     private boolean eqfNlqfLevelVerified;
     private String badgeClassType;
-    @Lob
     private String oldJson; // For legacy/compatibility
     private Duration expirationPeriod;
     private boolean archived;
@@ -52,9 +55,23 @@ public class BadgeClass {
         inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> staff;
 
-    // For now, awardAllowedInstitutions and tags as String; can be changed to entity if needed
-    private String awardAllowedInstitutions;
-    private String tags;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "badgeclass_tags",
+        joinColumns = @JoinColumn(name = "badgeclass_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags;
+
+    @OneToMany(mappedBy = "badgeClass", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Alignment> alignments;
+
+    @Column(columnDefinition = "TEXT")
+    private String extensions; // Store as JSON string for flexibility
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "badgeclass_institutions",
+        joinColumns = @JoinColumn(name = "badgeclass_id"),
+        inverseJoinColumns = @JoinColumn(name = "institution_id"))
+    private Set<Institution> awardAllowedInstitutions;
 
     @OneToMany(mappedBy = "badgeClass", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BadgeInstance> instances;
@@ -69,5 +86,67 @@ public class BadgeClass {
         return this.archived;
     }
 
-    // ...
+    public void setName(String name) { this.name = name; }
+    public void setImage(String image) { this.image = image; }
+    public void setDescription(String description) { this.description = description; }
+    public void setCriteriaText(String criteriaText) { this.criteriaText = criteriaText; }
+    public void setFormal(boolean formal) { this.formal = formal; }
+    public void setIsPrivate(boolean isPrivate) { this.isPrivate = isPrivate; }
+    public void setNarrativeRequired(boolean narrativeRequired) { this.narrativeRequired = narrativeRequired; }
+    public void setEvidenceRequired(boolean evidenceRequired) { this.evidenceRequired = evidenceRequired; }
+    public void setAwardNonValidatedNameAllowed(boolean awardNonValidatedNameAllowed) { this.awardNonValidatedNameAllowed = awardNonValidatedNameAllowed; }
+    public void setIsMicroCredentials(boolean isMicroCredentials) { this.isMicroCredentials = isMicroCredentials; }
+    public void setDirectAwardingDisabled(boolean directAwardingDisabled) { this.directAwardingDisabled = directAwardingDisabled; }
+    public void setSelfEnrollmentDisabled(boolean selfEnrollmentDisabled) { this.selfEnrollmentDisabled = selfEnrollmentDisabled; }
+    public void setParticipation(String participation) { this.participation = participation; }
+    public void setAssessmentType(String assessmentType) { this.assessmentType = assessmentType; }
+    public void setAssessmentIdVerified(boolean assessmentIdVerified) { this.assessmentIdVerified = assessmentIdVerified; }
+    public void setAssessmentSupervised(boolean assessmentSupervised) { this.assessmentSupervised = assessmentSupervised; }
+    public void setQualityAssuranceName(String qualityAssuranceName) { this.qualityAssuranceName = qualityAssuranceName; }
+    public void setQualityAssuranceUrl(String qualityAssuranceUrl) { this.qualityAssuranceUrl = qualityAssuranceUrl; }
+    public void setQualityAssuranceDescription(String qualityAssuranceDescription) { this.qualityAssuranceDescription = qualityAssuranceDescription; }
+    public void setGradeAchievedRequired(boolean gradeAchievedRequired) { this.gradeAchievedRequired = gradeAchievedRequired; }
+    public void setStackable(boolean stackable) { this.stackable = stackable; }
+    public void setEqfNlqfLevelVerified(boolean eqfNlqfLevelVerified) { this.eqfNlqfLevelVerified = eqfNlqfLevelVerified; }
+    public void setBadgeClassType(String badgeClassType) { this.badgeClassType = badgeClassType; }
+    public void setExpirationPeriod(Duration expirationPeriod) { this.expirationPeriod = expirationPeriod; }
+    public void setIssuer(Issuer issuer) { this.issuer = issuer; }
+    public void setTags(Set<Tag> tags) { this.tags = tags; }
+    public void setAlignments(List<Alignment> alignments) { this.alignments = alignments; }
+    public void setAwardAllowedInstitutions(Set<Institution> institutions) { this.awardAllowedInstitutions = institutions; }
+    public void setExtensions(String extensions) { this.extensions = extensions; }
+
+    public Long getId() { return this.id; }
+    public String getName() { return this.name; }
+    public String getImage() { return this.image; }
+    public String getDescription() { return this.description; }
+    public String getCriteriaText() { return this.criteriaText; }
+    public boolean isFormal() { return this.formal; }
+    public boolean isPrivate() { return this.isPrivate; }
+    public boolean isNarrativeRequired() { return this.narrativeRequired; }
+    public boolean isEvidenceRequired() { return this.evidenceRequired; }
+    public boolean isAwardNonValidatedNameAllowed() { return this.awardNonValidatedNameAllowed; }
+    public boolean isMicroCredentials() { return this.isMicroCredentials; }
+    public boolean isDirectAwardingDisabled() { return this.directAwardingDisabled; }
+    public boolean isSelfEnrollmentDisabled() { return this.selfEnrollmentDisabled; }
+    public String getParticipation() { return this.participation; }
+    public String getAssessmentType() { return this.assessmentType; }
+    public boolean isAssessmentIdVerified() { return this.assessmentIdVerified; }
+    public boolean isAssessmentSupervised() { return this.assessmentSupervised; }
+    public String getQualityAssuranceName() { return this.qualityAssuranceName; }
+    public String getQualityAssuranceUrl() { return this.qualityAssuranceUrl; }
+    public String getQualityAssuranceDescription() { return this.qualityAssuranceDescription; }
+    public boolean isGradeAchievedRequired() { return this.gradeAchievedRequired; }
+    public boolean isStackable() { return this.stackable; }
+    public boolean isEqfNlqfLevelVerified() { return this.eqfNlqfLevelVerified; }
+    public String getBadgeClassType() { return this.badgeClassType; }
+    public Duration getExpirationPeriod() { return this.expirationPeriod; }
+    public LocalDateTime getCreatedAt() { return this.createdAt; }
+    public LocalDateTime getUpdatedAt() { return this.updatedAt; }
+    public Set<Tag> getTags() { return this.tags; }
+    public List<Alignment> getAlignments() { return this.alignments; }
+    public Set<Institution> getAwardAllowedInstitutions() { return this.awardAllowedInstitutions; }
+    public String getExtensions() { return this.extensions; }
+
+    public Issuer getIssuer() { return this.issuer; }
 } 

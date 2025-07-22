@@ -72,7 +72,7 @@ public class PublicController {
     @GetMapping("/collections/{id}")
     public ResponseEntity<ApiResponse<BadgeInstanceCollection>> getPublicCollection(@PathVariable Long id) {
         return badgeInstanceCollectionService.getCollection(id)
-            .filter(BadgeInstanceCollection::isPublic)
+            .filter(BadgeInstanceCollection::isPublicCollection)
             .map(col -> ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", col, null)))
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Collection not found or not public", null, "Collection not found or not public")));
     }

@@ -23,8 +23,8 @@ public class BadgeInstanceCollection {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
-    private boolean isPublic = false;
+    // Renamed from isPublic to publicCollection to avoid reserved keyword issues
+    private boolean publicCollection = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -47,8 +47,8 @@ public class BadgeInstanceCollection {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
-    public boolean isPublic() { return isPublic; }
-    public void setPublic(boolean aPublic) { isPublic = aPublic; }
+    public boolean isPublicCollection() { return publicCollection; }
+    public void setPublicCollection(boolean publicCollection) { this.publicCollection = publicCollection; }
 
     public Set<BadgeInstance> getBadgeInstances() { return badgeInstances; }
     public void setBadgeInstances(Set<BadgeInstance> badgeInstances) { this.badgeInstances = badgeInstances; }
