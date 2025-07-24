@@ -29,10 +29,11 @@ public class BadgeInstanceController {
         BadgeInstanceDTO dto = new BadgeInstanceDTO();
         dto.id = bi.getId();
         dto.badgeClassId = bi.getBadgeClass() != null ? bi.getBadgeClass().getId() : null;
-        dto.issuerId = bi.getIssuer() != null ? bi.getIssuer().getId() : null;
+        dto.organizationId = bi.getOrganization() != null ? bi.getOrganization().getId() : null;
+        dto.organizationName = bi.getOrganization() != null ? (bi.getOrganization().getNameEnglish() != null ? bi.getOrganization().getNameEnglish() : bi.getOrganization().getInstitutionName()) : null;
         dto.recipientId = bi.getRecipient() != null ? bi.getRecipient().getId() : null;
         dto.issuedOn = bi.getIssuedOn();
-        dto.publicKeyIssuer = bi.getPublicKeyIssuer();
+        dto.publicKeyOrganization = bi.getPublicKeyOrganization();
         dto.identifier = bi.getIdentifier();
         dto.recipientType = bi.getRecipientType();
         dto.awardType = bi.getAwardType();
@@ -55,7 +56,6 @@ public class BadgeInstanceController {
         dto.includeGradeAchieved = bi.getIncludeGradeAchieved();
         dto.status = bi.getStatus() != null ? bi.getStatus().name() : null;
         dto.badgeClassName = bi.getBadgeClass() != null ? bi.getBadgeClass().getName() : null;
-        dto.issuerName = bi.getIssuer() != null ? (bi.getIssuer().getNameEnglish() != null ? bi.getIssuer().getNameEnglish() : bi.getIssuer().getInstitutionName()) : null;
         dto.recipientEmail = bi.getRecipient() != null ? bi.getRecipient().getEmail() : null;
         dto.description = bi.getDescription() != null ? bi.getDescription() : null;
         dto.learningOutcomes = bi.getLearningOutcomes() != null ? bi.getLearningOutcomes() : null;
@@ -79,8 +79,8 @@ public class BadgeInstanceController {
         return dto;
     }
 
-    @Operation(summary = "Create badge instance", description = "ADMIN/ISSUER only: Create a new badge instance.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Create badge instance", description = "ADMIN/ORGANIZATION only: Create a new badge instance.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("")
     public ResponseEntity<ApiResponse<BadgeInstance>> createBadgeInstance(@RequestBody BadgeInstanceDTO badgeInstanceDTO) {
         BadgeInstance created = badgeInstanceService.createBadgeInstanceFromDTO(badgeInstanceDTO);
@@ -88,6 +88,7 @@ public class BadgeInstanceController {
     }
 
     @Operation(summary = "Get all badge instances", description = "Get a list of all badge instances.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("")
     public ResponseEntity<ApiResponse<List<BadgeInstanceDTO>>> getAllBadgeInstances() {
         List<BadgeInstance> badgeInstances = badgeInstanceService.getAllBadgeInstances();
@@ -96,6 +97,7 @@ public class BadgeInstanceController {
     }
 
     @Operation(summary = "Get badge instance by ID", description = "Get badge instance details by ID.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BadgeInstanceDTO>> getBadgeInstanceById(@PathVariable Long id) {
         return badgeInstanceService.getBadgeInstanceById(id)
@@ -103,24 +105,24 @@ public class BadgeInstanceController {
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Badge instance not found", null, "Badge instance not found")));
     }
 
-    @Operation(summary = "Update badge instance", description = "ADMIN/ISSUER only: Update a badge instance.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Update badge instance", description = "ADMIN/ORGANIZATION only: Update a badge instance.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BadgeInstance>> updateBadgeInstance(@PathVariable Long id, @RequestBody BadgeInstanceDTO badgeInstanceDTO) {
         BadgeInstance updated = badgeInstanceService.updateBadgeInstanceFromDTO(id, badgeInstanceDTO);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge instance updated", updated, null));
     }
 
-    @Operation(summary = "Delete badge instance", description = "ADMIN/ISSUER only: Delete a badge instance.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Delete badge instance", description = "ADMIN/ORGANIZATION only: Delete a badge instance.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteBadgeInstance(@PathVariable Long id) {
         badgeInstanceService.deleteBadgeInstance(id);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge instance deleted", null, null));
     }
 
-    @Operation(summary = "Archive or unarchive badge instance", description = "ADMIN/ISSUER only: Archive or unarchive a badge instance. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Archive or unarchive badge instance", description = "ADMIN/ORGANIZATION only: Archive or unarchive a badge instance. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PutMapping("/{id}/archive")
     public ResponseEntity<ApiResponse<BadgeInstance>> archiveBadgeInstance(@PathVariable Long id, @RequestBody Map<String, Boolean> archiveRequest) {
         boolean archive = archiveRequest.getOrDefault("archive", true);
@@ -129,8 +131,8 @@ public class BadgeInstanceController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
     }
 
-    @Operation(summary = "Bulk archive/unarchive badge instances", description = "ADMIN/ISSUER only: Bulk archive or unarchive badge instances. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Bulk archive/unarchive badge instances", description = "ADMIN/ORGANIZATION only: Bulk archive or unarchive badge instances. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/bulk-archive")
     public ResponseEntity<ApiResponse<List<BadgeInstance>>> bulkArchiveBadgeInstances(@RequestBody Map<String, Object> body) {
         List<Long> ids = ((List<?>) body.get("ids")).stream().map(id -> Long.valueOf(id.toString())).collect(Collectors.toList());
@@ -140,16 +142,16 @@ public class BadgeInstanceController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
     }
 
-    @Operation(summary = "Bulk delete badge instances", description = "ADMIN/ISSUER only: Bulk delete badge instances. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Bulk delete badge instances", description = "ADMIN/ORGANIZATION only: Bulk delete badge instances. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/bulk-delete")
     public ResponseEntity<ApiResponse<Void>> bulkDeleteBadgeInstances(@RequestBody List<Long> ids) {
         badgeInstanceService.bulkDeleteBadgeInstances(ids);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge instances deleted", null, null));
     }
 
-    @Operation(summary = "Revoke badge instances", description = "ADMIN/ISSUER only: Revoke badge instances in bulk. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Revoke badge instances", description = "ADMIN/ORGANIZATION only: Revoke badge instances in bulk. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/revoke-assertions")
     public ResponseEntity<ApiResponse<List<BadgeInstance>>> revokeBadgeInstances(@RequestBody Map<String, Object> body) {
         String revocationReason = (String) body.getOrDefault("revocation_reason", "");

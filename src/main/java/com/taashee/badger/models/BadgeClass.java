@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.Type;
-import com.taashee.badger.models.Institution;
+import com.taashee.badger.models.Organization;
 
 @Entity
 public class BadgeClass {
@@ -16,8 +16,8 @@ public class BadgeClass {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "issuer_id")
-    private Issuer issuer;
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     private String name;
     @Column(columnDefinition = "TEXT")
@@ -110,7 +110,7 @@ public class BadgeClass {
     public void setEqfNlqfLevelVerified(boolean eqfNlqfLevelVerified) { this.eqfNlqfLevelVerified = eqfNlqfLevelVerified; }
     public void setBadgeClassType(String badgeClassType) { this.badgeClassType = badgeClassType; }
     public void setExpirationPeriod(Duration expirationPeriod) { this.expirationPeriod = expirationPeriod; }
-    public void setIssuer(Issuer issuer) { this.issuer = issuer; }
+    public void setOrganization(Organization organization) { this.organization = organization; }
     public void setTags(Set<Tag> tags) { this.tags = tags; }
     public void setAlignments(List<Alignment> alignments) { this.alignments = alignments; }
     public void setAwardAllowedInstitutions(Set<Institution> institutions) { this.awardAllowedInstitutions = institutions; }
@@ -148,5 +148,5 @@ public class BadgeClass {
     public Set<Institution> getAwardAllowedInstitutions() { return this.awardAllowedInstitutions; }
     public String getExtensions() { return this.extensions; }
 
-    public Issuer getIssuer() { return this.issuer; }
+    public Organization getOrganization() { return this.organization; }
 } 

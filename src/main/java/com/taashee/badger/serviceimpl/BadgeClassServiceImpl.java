@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Set;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.taashee.badger.repositories.IssuerStaffRepository;
+import com.taashee.badger.repositories.OrganizationStaffRepository;
 import com.taashee.badger.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class BadgeClassServiceImpl implements BadgeClassService {
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
-    private IssuerStaffRepository issuerStaffRepository;
+    private OrganizationStaffRepository organizationStaffRepository;
     @Autowired
     private UserRepository userRepository;
 
@@ -67,7 +67,9 @@ public class BadgeClassServiceImpl implements BadgeClassService {
 
     @Override
     public Optional<BadgeClass> getBadgeClassById(Long id) {
-        // Role-based view restriction
+        // Enforce role-based and organization-based access control for all badge class operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -79,10 +81,10 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         if (isIssuer) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user == null || badgeClassOpt.isEmpty()) return Optional.empty();
-            List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+            List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
             if (staffList.isEmpty()) return Optional.empty();
-            List<Long> issuerIds = staffList.stream().map(s -> s.getIssuer().getId()).toList();
-            if (badgeClassOpt.get().getIssuer() != null && issuerIds.contains(badgeClassOpt.get().getIssuer().getId())) {
+            List<Long> organizationIds = staffList.stream().map(s -> s.getOrganization().getId()).toList();
+            if (badgeClassOpt.get().getOrganization() != null && organizationIds.contains(badgeClassOpt.get().getOrganization().getId())) {
                 return badgeClassOpt;
             } else {
                 return Optional.empty();
@@ -109,14 +111,14 @@ public class BadgeClassServiceImpl implements BadgeClassService {
                 logger.warn("[getAllBadgeClasses] ISSUER user not found: {}", email);
                 return List.of();
             }
-            List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+            List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
             if (staffList.isEmpty()) {
-                logger.warn("[getAllBadgeClasses] ISSUER user {} has no issuer staff records", email);
+                logger.warn("[getAllBadgeClasses] ISSUER user {} has no organization staff records", email);
                 return List.of();
             }
-            List<Long> issuerIds = staffList.stream().map(s -> s.getIssuer().getId()).toList();
-            List<BadgeClass> filtered = badgeClassRepository.findAll().stream().filter(bc -> bc.getIssuer() != null && issuerIds.contains(bc.getIssuer().getId())).toList();
-            logger.info("[getAllBadgeClasses] ISSUER user: {} roles: {} issuerIds: {} - returning {} badge classes", email, roles, issuerIds, filtered.size());
+            List<Long> organizationIds = staffList.stream().map(s -> s.getOrganization().getId()).toList();
+            List<BadgeClass> filtered = badgeClassRepository.findAll().stream().filter(bc -> bc.getOrganization() != null && organizationIds.contains(bc.getOrganization().getId())).toList();
+            logger.info("[getAllBadgeClasses] ISSUER user: {} roles: {} organizationIds: {} - returning {} badge classes", email, roles, organizationIds, filtered.size());
             return filtered;
         } else {
             logger.info("[getAllBadgeClasses] Non-admin/non-issuer user: {} roles: {} - returning empty list", email, roles);
@@ -166,7 +168,9 @@ public class BadgeClassServiceImpl implements BadgeClassService {
 
     @Override
     public BadgeClass createBadgeClassFromDTO(BadgeClassDTO dto) {
-        // Enforce issuerId for ISSUER role
+        // Enforce role-based and organization-based access control for all badge class operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -176,19 +180,19 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         if (isIssuer && !isAdmin) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user != null) {
-                List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+                List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
                 if (!staffList.isEmpty()) {
-                    // Use the first issuerId (or all, if supporting multiple)
-                    dto.issuerId = staffList.get(0).getIssuer().getId();
-                    logger.info("[createBadgeClassFromDTO] ISSUER user: {} roles: {} - setting issuerId to {}", email, roles, dto.issuerId);
+                    // Use the first organizationId (or all, if supporting multiple)
+                    dto.organizationId = staffList.get(0).getOrganization().getId();
+                    logger.info("[createBadgeClassFromDTO] ISSUER user: {} roles: {} - setting organizationId to {}", email, roles, dto.organizationId);
                 } else {
-                    logger.warn("[createBadgeClassFromDTO] ISSUER user: {} roles: {} - has no issuer staff records", email, roles);
+                    logger.warn("[createBadgeClassFromDTO] ISSUER user: {} roles: {} - has no organization staff records", email, roles);
                 }
             } else {
                 logger.warn("[createBadgeClassFromDTO] ISSUER user not found: {}", email);
             }
         } else {
-            logger.info("[createBadgeClassFromDTO] ADMIN or other user: {} roles: {} - using provided issuerId: {}", email, roles, dto.issuerId);
+            logger.info("[createBadgeClassFromDTO] ADMIN or other user: {} roles: {} - using provided organizationId: {}", email, roles, dto.organizationId);
         }
         BadgeClass badgeClass = new BadgeClass();
         mapDTOToEntity(dto, badgeClass);
@@ -197,7 +201,9 @@ public class BadgeClassServiceImpl implements BadgeClassService {
 
     @Override
     public BadgeClass updateBadgeClassFromDTO(Long id, BadgeClassDTO dto) {
-        // Enforce issuerId for ISSUER role
+        // Enforce role-based and organization-based access control for all badge class operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -207,9 +213,9 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         if (isIssuer && !isAdmin) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user != null) {
-                List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+                List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
                 if (!staffList.isEmpty()) {
-                    dto.issuerId = staffList.get(0).getIssuer().getId();
+                    dto.organizationId = staffList.get(0).getOrganization().getId();
                 }
             }
         }
@@ -293,10 +299,10 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         badgeClass.setBadgeClassType(dto.badgeClassType);
         badgeClass.setExpirationPeriod(dto.expirationPeriod);
         badgeClass.setArchived(dto.archived);
-        // Set issuer if provided
-        if (dto.issuerId != null) {
-            badgeClass.setIssuer(new com.taashee.badger.models.Issuer());
-            badgeClass.getIssuer().setId(dto.issuerId);
+        // Set organization if provided
+        if (dto.organizationId != null) {
+            badgeClass.setOrganization(new com.taashee.badger.models.Organization());
+            badgeClass.getOrganization().setId(dto.organizationId);
         }
         // Tags
         if (dto.tagNames != null) {

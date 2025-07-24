@@ -73,7 +73,7 @@ public class EmailVerificationService {
         message.setTo(user.getEmail());
         message.setSubject("You have been added as staff - Badger Management");
         message.setText("Hello " + user.getFirstName() + ",\n\n" +
-            "You have been added as staff to an issuer in the Badger Management system.\n" +
+            "You have been added as staff to an organization in the Badger Management system.\n" +
             "You can log in with the following credentials:\n" +
             "Email: " + user.getEmail() + "\n" +
             "Password: " + password + "\n\n" +

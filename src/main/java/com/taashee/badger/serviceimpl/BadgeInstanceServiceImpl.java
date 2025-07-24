@@ -3,19 +3,19 @@ package com.taashee.badger.serviceimpl;
 import com.taashee.badger.models.BadgeInstance;
 import com.taashee.badger.models.BadgeInstanceDTO;
 import com.taashee.badger.models.BadgeClass;
-import com.taashee.badger.models.Issuer;
+import com.taashee.badger.models.Organization;
 import com.taashee.badger.models.User;
 import com.taashee.badger.models.Evidence;
 import com.taashee.badger.repositories.BadgeInstanceRepository;
 import com.taashee.badger.repositories.BadgeClassRepository;
-import com.taashee.badger.repositories.IssuerRepository;
+import com.taashee.badger.repositories.OrganizationRepository;
+import com.taashee.badger.repositories.OrganizationStaffRepository;
 import com.taashee.badger.repositories.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taashee.badger.services.BadgeInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.taashee.badger.repositories.IssuerStaffRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,9 +28,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
     @Autowired
     private BadgeClassRepository badgeClassRepository;
     @Autowired
-    private IssuerRepository issuerRepository;
+    private OrganizationRepository organizationRepository;
     @Autowired
-    private IssuerStaffRepository issuerStaffRepository;
+    private OrganizationStaffRepository organizationStaffRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -54,7 +54,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
 
     @Override
     public Optional<BadgeInstance> getBadgeInstanceById(Long id) {
-        // Role-based view restriction
+        // Enforce role-based and organization-based access control for all badge instance operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -66,10 +68,10 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         if (isIssuer) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user == null || badgeInstanceOpt.isEmpty()) return Optional.empty();
-            List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+            List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
             if (staffList.isEmpty()) return Optional.empty();
-            List<Long> issuerIds = staffList.stream().map(s -> s.getIssuer().getId()).toList();
-            if (badgeInstanceOpt.get().getIssuer() != null && issuerIds.contains(badgeInstanceOpt.get().getIssuer().getId())) {
+            List<Long> organizationIds = staffList.stream().map(s -> s.getOrganization().getId()).toList();
+            if (badgeInstanceOpt.get().getOrganization() != null && organizationIds.contains(badgeInstanceOpt.get().getOrganization().getId())) {
                 return badgeInstanceOpt;
             } else {
                 return Optional.empty();
@@ -80,7 +82,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
 
     @Override
     public List<BadgeInstance> getAllBadgeInstances() {
-        // Get current user email and roles
+        // Enforce role-based and organization-based access control for all badge instance operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -92,10 +96,10 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         } else if (isIssuer) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user == null) return List.of();
-            List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+            List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
             if (staffList.isEmpty()) return List.of();
-            List<Long> issuerIds = staffList.stream().map(s -> s.getIssuer().getId()).toList();
-            return badgeInstanceRepository.findAll().stream().filter(bi -> bi.getIssuer() != null && issuerIds.contains(bi.getIssuer().getId())).toList();
+            List<Long> organizationIds = staffList.stream().map(s -> s.getOrganization().getId()).toList();
+            return badgeInstanceRepository.findAll().stream().filter(bi -> bi.getOrganization() != null && organizationIds.contains(bi.getOrganization().getId())).toList();
         } else {
             return List.of();
         }
@@ -145,7 +149,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
 
     @Override
     public BadgeInstance createBadgeInstanceFromDTO(BadgeInstanceDTO dto) {
-        // Enforce issuerId for ISSUER role
+        // Enforce role-based and organization-based access control for all badge instance operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -155,9 +161,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         if (isIssuer && !isAdmin) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user != null) {
-                List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+                List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
                 if (!staffList.isEmpty()) {
-                    dto.issuerId = staffList.get(0).getIssuer().getId();
+                    dto.organizationId = staffList.get(0).getOrganization().getId();
                 }
             }
         }
@@ -168,7 +174,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
 
     @Override
     public BadgeInstance updateBadgeInstanceFromDTO(Long id, BadgeInstanceDTO dto) {
-        // Enforce issuerId for ISSUER role
+        // Enforce role-based and organization-based access control for all badge instance operations
+        // ADMINs: full access
+        // ORGANIZATION role: only their own organization's data
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -178,9 +186,9 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         if (isIssuer && !isAdmin) {
             com.taashee.badger.models.User user = userRepository.findByEmail(email).orElse(null);
             if (user != null) {
-                List<com.taashee.badger.models.IssuerStaff> staffList = issuerStaffRepository.findByUserId(user.getId());
+                List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
                 if (!staffList.isEmpty()) {
-                    dto.issuerId = staffList.get(0).getIssuer().getId();
+                    dto.organizationId = staffList.get(0).getOrganization().getId();
                 }
             }
         }
@@ -199,16 +207,16 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
             }
             badgeInstance.setBadgeClass(badgeClass);
         }
-        if (dto.issuerId != null) {
-            Issuer issuer = issuerRepository.findById(dto.issuerId).orElseThrow(() -> new RuntimeException("Issuer not found: " + dto.issuerId));
-            badgeInstance.setIssuer(issuer);
+        if (dto.organizationId != null) {
+            Organization organization = organizationRepository.findById(dto.organizationId).orElseThrow(() -> new RuntimeException("Organization not found: " + dto.organizationId));
+            badgeInstance.setOrganization(organization);
         }
         if (dto.recipientId != null) {
             User recipient = userRepository.findById(dto.recipientId).orElseThrow(() -> new RuntimeException("User not found: " + dto.recipientId));
             badgeInstance.setRecipient(recipient);
         }
         badgeInstance.setIssuedOn(dto.issuedOn);
-        badgeInstance.setPublicKeyIssuer(dto.publicKeyIssuer);
+        badgeInstance.setPublicKeyOrganization(dto.publicKeyOrganization);
         badgeInstance.setIdentifier(dto.identifier);
         badgeInstance.setRecipientType(dto.recipientType);
         badgeInstance.setAwardType(dto.awardType);

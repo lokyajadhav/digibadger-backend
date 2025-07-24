@@ -35,7 +35,7 @@ public class BadgeClassResponseDTO {
     public boolean archived;
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;
-    public Long issuerId;
+    public Long organizationId;
     public List<String> tagNames;
     public List<AlignmentDTO> alignments;
     public List<Long> institutionIds;

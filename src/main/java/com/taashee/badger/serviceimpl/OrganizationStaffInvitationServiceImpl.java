@@ -1,8 +1,8 @@
 package com.taashee.badger.serviceimpl;
 
-import com.taashee.badger.models.IssuerStaffInvitation;
-import com.taashee.badger.repositories.IssuerStaffInvitationRepository;
-import com.taashee.badger.services.IssuerStaffInvitationService;
+import com.taashee.badger.models.OrganizationStaffInvitation;
+import com.taashee.badger.repositories.OrganizationStaffInvitationRepository;
+import com.taashee.badger.services.OrganizationStaffInvitationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,10 +16,10 @@ import com.taashee.badger.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
-public class IssuerStaffInvitationServiceImpl implements IssuerStaffInvitationService {
+public class OrganizationStaffInvitationServiceImpl implements OrganizationStaffInvitationService {
 
     @Autowired
-    private IssuerStaffInvitationRepository invitationRepository;
+    private OrganizationStaffInvitationRepository invitationRepository;
 
     @Autowired
     private EmailVerificationService emailVerificationService;
@@ -34,60 +34,60 @@ public class IssuerStaffInvitationServiceImpl implements IssuerStaffInvitationSe
     @Value("${app.uiBaseUrl:http://localhost:5173}")
     private String uiBaseUrl;
 
-    public boolean hasActiveInvitation(String email, Long issuerId) {
-        List<IssuerStaffInvitation> pending = invitationRepository.findByEmailAndIssuerIdAndStatus(email, issuerId, IssuerStaffInvitation.Status.PENDING);
-        List<IssuerStaffInvitation> accepted = invitationRepository.findByEmailAndIssuerIdAndStatus(email, issuerId, IssuerStaffInvitation.Status.ACCEPTED);
+    public boolean hasActiveInvitation(String email, Long organizationId) {
+        List<OrganizationStaffInvitation> pending = invitationRepository.findByEmailAndOrganizationIdAndStatus(email, organizationId, OrganizationStaffInvitation.Status.PENDING);
+        List<OrganizationStaffInvitation> accepted = invitationRepository.findByEmailAndOrganizationIdAndStatus(email, organizationId, OrganizationStaffInvitation.Status.ACCEPTED);
         return (!pending.isEmpty() || !accepted.isEmpty());
     }
 
     @Override
-    public IssuerStaffInvitation createInvitation(IssuerStaffInvitation invitation) {
-        if (hasActiveInvitation(invitation.getEmail(), invitation.getIssuerId())) {
-            throw new RuntimeException("Active invitation already exists for this email and issuer.");
+    public OrganizationStaffInvitation createInvitation(OrganizationStaffInvitation invitation) {
+        if (hasActiveInvitation(invitation.getEmail(), invitation.getOrganizationId())) {
+            throw new RuntimeException("Active invitation already exists for this email and organization.");
         }
         // Generate token if not set
         if (invitation.getToken() == null || invitation.getToken().isEmpty()) {
             invitation.setToken(UUID.randomUUID().toString());
         }
-        invitation.setStatus(IssuerStaffInvitation.Status.PENDING);
-        IssuerStaffInvitation saved = invitationRepository.save(invitation);
+        invitation.setStatus(OrganizationStaffInvitation.Status.PENDING);
+        OrganizationStaffInvitation saved = invitationRepository.save(invitation);
         // Send invitation email
-        String acceptUrl = uiBaseUrl + "/accept-issuer-invitation?token=" + saved.getToken();
+        String acceptUrl = uiBaseUrl + "/accept-organization-invitation?token=" + saved.getToken();
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(saved.getEmail());
-        message.setSubject("You're invited as staff to an Issuer on Badger Management");
-        message.setText("Hello,\n\nYou have been invited to join an Issuer as staff (role: " + saved.getStaffRole() + ").\nPlease click the link below to accept the invitation and activate your account:\n" + acceptUrl + "\n\nIf you did not expect this invitation, you can ignore this email.\n");
+        message.setSubject("You're invited as staff to an Organization on Badger Management");
+        message.setText("Hello,\n\nYou have been invited to join an Organization as staff (role: " + saved.getStaffRole() + ").\nPlease click the link below to accept the invitation and activate your account:\n" + acceptUrl + "\n\nIf you did not expect this invitation, you can ignore this email.\n");
         message.setFrom("appadmin@taashee.com");
         emailVerificationService.sendCustomEmail(message);
         return saved;
     }
 
     @Override
-    public Optional<IssuerStaffInvitation> findByToken(String token) {
+    public Optional<OrganizationStaffInvitation> findByToken(String token) {
         return invitationRepository.findByToken(token);
     }
 
     @Override
-    public List<IssuerStaffInvitation> findByIssuerId(Long issuerId) {
-        return invitationRepository.findByIssuerId(issuerId);
+    public List<OrganizationStaffInvitation> findByOrganizationId(Long organizationId) {
+        return invitationRepository.findByOrganizationId(organizationId);
     }
 
     @Override
-    public List<IssuerStaffInvitation> findByEmailAndStatus(String email, IssuerStaffInvitation.Status status) {
+    public List<OrganizationStaffInvitation> findByEmailAndStatus(String email, OrganizationStaffInvitation.Status status) {
         return invitationRepository.findByEmailAndStatus(email, status);
     }
 
     @Override
-    public List<IssuerStaffInvitation> findByIssuerIdAndStatus(Long issuerId, IssuerStaffInvitation.Status status) {
-        return invitationRepository.findByIssuerIdAndStatus(issuerId, status);
+    public List<OrganizationStaffInvitation> findByOrganizationIdAndStatus(Long organizationId, OrganizationStaffInvitation.Status status) {
+        return invitationRepository.findByOrganizationIdAndStatus(organizationId, status);
     }
 
     @Override
-    public IssuerStaffInvitation acceptInvitation(String token) {
-        Optional<IssuerStaffInvitation> invitationOpt = invitationRepository.findByToken(token);
+    public OrganizationStaffInvitation acceptInvitation(String token) {
+        Optional<OrganizationStaffInvitation> invitationOpt = invitationRepository.findByToken(token);
         if (invitationOpt.isPresent()) {
-            IssuerStaffInvitation invitation = invitationOpt.get();
-            if (invitation.getStatus() != IssuerStaffInvitation.Status.PENDING) {
+            OrganizationStaffInvitation invitation = invitationOpt.get();
+            if (invitation.getStatus() != OrganizationStaffInvitation.Status.PENDING) {
                 throw new RuntimeException("Invitation already used or expired");
             }
             // Check if user exists
@@ -101,14 +101,14 @@ public class IssuerStaffInvitationServiceImpl implements IssuerStaffInvitationSe
                 user.setEnabled(true);
                 user.setPassword(passwordEncoder.encode(defaultStaffPassword));
                 user.setRoles(new java.util.HashSet<>());
-                user.getRoles().add("ISSUER");
+                user.getRoles().add("ORGANIZATION");
                 isNewUser = true;
                 userRepository.save(user);
-            } else if (!user.getRoles().contains("ISSUER")) {
-                user.getRoles().add("ISSUER");
+            } else if (!user.getRoles().contains("ORGANIZATION")) {
+                user.getRoles().add("ORGANIZATION");
                 userRepository.save(user);
             }
-            invitation.setStatus(IssuerStaffInvitation.Status.ACCEPTED);
+            invitation.setStatus(OrganizationStaffInvitation.Status.ACCEPTED);
             invitation.setAcceptedAt(java.time.LocalDateTime.now());
             invitationRepository.save(invitation);
             // Send credentials email if new user
@@ -116,7 +116,7 @@ public class IssuerStaffInvitationServiceImpl implements IssuerStaffInvitationSe
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(user.getEmail());
                 message.setSubject("Your Badger Management Account is Ready");
-                message.setText("Congratulations! Your account has been created.\n\nLogin details:\nEmail: " + user.getEmail() + "\nPassword: " + defaultStaffPassword + "\nRole: ISSUER\n\nPlease log in and change your password after your first login.\n\nIf you have any questions, contact your administrator.");
+                message.setText("Congratulations! Your account has been created.\n\nLogin details:\nEmail: " + user.getEmail() + "\nPassword: " + defaultStaffPassword + "\nRole: ORGANIZATION\n\nPlease log in and change your password after your first login.\n\nIf you have any questions, contact your administrator.");
                 message.setFrom("appadmin@taashee.com");
                 emailVerificationService.sendCustomEmail(message);
             }
@@ -126,10 +126,10 @@ public class IssuerStaffInvitationServiceImpl implements IssuerStaffInvitationSe
     }
 
     @Override
-    public IssuerStaffInvitation rejectInvitation(String token) {
-        Optional<IssuerStaffInvitation> invitationOpt = invitationRepository.findByToken(token);
+    public OrganizationStaffInvitation rejectInvitation(String token) {
+        Optional<OrganizationStaffInvitation> invitationOpt = invitationRepository.findByToken(token);
         if (invitationOpt.isPresent()) {
-            IssuerStaffInvitation invitation = invitationOpt.get();
+            OrganizationStaffInvitation invitation = invitationOpt.get();
             invitationRepository.delete(invitation);
             return invitation; // Return the deleted invitation for response
         }
@@ -137,11 +137,11 @@ public class IssuerStaffInvitationServiceImpl implements IssuerStaffInvitationSe
     }
 
     @Override
-    public Optional<IssuerStaffInvitation> findById(Long id) {
+    public Optional<OrganizationStaffInvitation> findById(Long id) {
         return invitationRepository.findById(id);
     }
     @Override
-    public IssuerStaffInvitation save(IssuerStaffInvitation invitation) {
+    public OrganizationStaffInvitation save(OrganizationStaffInvitation invitation) {
         return invitationRepository.save(invitation);
     }
     public void sendCustomEmail(org.springframework.mail.SimpleMailMessage message) {

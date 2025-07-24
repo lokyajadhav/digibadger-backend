@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BadgeClassDTO {
-    public Long issuerId;
+    public Long organizationId;
     public String name;
     public String image;
     public String description;

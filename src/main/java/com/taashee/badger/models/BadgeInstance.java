@@ -16,15 +16,15 @@ public class BadgeInstance {
     private BadgeClass badgeClass;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "issuer_id")
-    private Issuer issuer;
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id")
     private User recipient;
 
     private LocalDateTime issuedOn;
-    private String publicKeyIssuer; // For now, as String; can be changed to entity if needed
+    private String publicKeyOrganization; // For now, as String; can be changed to entity if needed
     private String identifier;
     private String recipientType;
     private String awardType;
@@ -64,10 +64,10 @@ public class BadgeInstance {
     // Getters and setters (or use Lombok @Data)
     public void setId(Long id) { this.id = id; }
     public void setBadgeClass(BadgeClass badgeClass) { this.badgeClass = badgeClass; }
-    public void setIssuer(Issuer issuer) { this.issuer = issuer; }
+    public void setOrganization(Organization organization) { this.organization = organization; }
     public void setRecipient(User recipient) { this.recipient = recipient; }
     public void setIssuedOn(java.time.LocalDateTime issuedOn) { this.issuedOn = issuedOn; }
-    public void setPublicKeyIssuer(String publicKeyIssuer) { this.publicKeyIssuer = publicKeyIssuer; }
+    public void setPublicKeyOrganization(String publicKeyOrganization) { this.publicKeyOrganization = publicKeyOrganization; }
     public void setIdentifier(String identifier) { this.identifier = identifier; }
     public void setRecipientIdentifier(String recipientIdentifier) { this.recipientIdentifier = recipientIdentifier; }
     public void setRecipientType(String recipientType) { this.recipientType = recipientType; }
@@ -98,10 +98,10 @@ public class BadgeInstance {
     public void setExtensions(String extensions) { this.extensions = extensions; }
     public void setEvidenceItems(java.util.List<Evidence> evidenceItems) { this.evidenceItems = evidenceItems; }
     public BadgeClass getBadgeClass() { return this.badgeClass; }
-    public Issuer getIssuer() { return this.issuer; }
+    public Organization getOrganization() { return this.organization; }
     public User getRecipient() { return this.recipient; }
     public LocalDateTime getIssuedOn() { return this.issuedOn; }
-    public String getPublicKeyIssuer() { return this.publicKeyIssuer; }
+    public String getPublicKeyOrganization() { return this.publicKeyOrganization; }
     public String getIdentifier() { return this.identifier; }
     public String getRecipientType() { return this.recipientType; }
     public String getAwardType() { return this.awardType; }

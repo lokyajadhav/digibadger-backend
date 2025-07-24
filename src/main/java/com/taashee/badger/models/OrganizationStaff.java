@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "issuer_staff")
-public class IssuerStaff {
+@Table(name = "organization_staff")
+public class OrganizationStaff {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "issuer_id")
+    @JoinColumn(name = "organization_id")
     @JsonIgnore
-    private Issuer issuer;
+    private Organization organization;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -28,8 +28,8 @@ public class IssuerStaff {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Issuer getIssuer() { return issuer; }
-    public void setIssuer(Issuer issuer) { this.issuer = issuer; }
+    public Organization getOrganization() { return organization; }
+    public void setOrganization(Organization organization) { this.organization = organization; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     public String getStaffRole() { return staffRole; }

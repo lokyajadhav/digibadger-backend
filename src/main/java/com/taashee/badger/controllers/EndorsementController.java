@@ -21,8 +21,8 @@ public class EndorsementController {
     @Autowired
     private EndorsementService endorsementService;
 
-    @Operation(summary = "Create endorsement", description = "ADMIN/ISSUER only: Create a new endorsement.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Create endorsement", description = "ADMIN/ORGANIZATION only: Create a new endorsement.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("")
     public ResponseEntity<ApiResponse<Endorsement>> createEndorsement(@RequestBody Endorsement endorsement) {
         Endorsement created = endorsementService.createEndorsement(endorsement);
@@ -30,6 +30,7 @@ public class EndorsementController {
     }
 
     @Operation(summary = "Get all endorsements", description = "Get a list of all endorsements.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("")
     public ResponseEntity<ApiResponse<List<Endorsement>>> getAllEndorsements() {
         List<Endorsement> endorsements = endorsementService.getAllEndorsements();
@@ -37,6 +38,7 @@ public class EndorsementController {
     }
 
     @Operation(summary = "Get endorsement by ID", description = "Get endorsement details by ID.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Endorsement>> getEndorsementById(@PathVariable Long id) {
         return endorsementService.getEndorsementById(id)
@@ -44,48 +46,48 @@ public class EndorsementController {
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Endorsement not found", null, "Endorsement not found")));
     }
 
-    @Operation(summary = "Update endorsement", description = "ADMIN/ISSUER only: Update an endorsement.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Update endorsement", description = "ADMIN/ORGANIZATION only: Update an endorsement.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Endorsement>> updateEndorsement(@PathVariable Long id, @RequestBody Endorsement endorsement) {
         Endorsement updated = endorsementService.updateEndorsement(id, endorsement);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Endorsement updated", updated, null));
     }
 
-    @Operation(summary = "Delete endorsement", description = "ADMIN/ISSUER only: Delete an endorsement.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Delete endorsement", description = "ADMIN/ORGANIZATION only: Delete an endorsement.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteEndorsement(@PathVariable Long id) {
         endorsementService.deleteEndorsement(id);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Endorsement deleted", null, null));
     }
 
-    @Operation(summary = "Accept endorsement", description = "ADMIN/ISSUER only: Accept an endorsement.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Accept endorsement", description = "ADMIN/ORGANIZATION only: Accept an endorsement.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/{id}/accept")
     public ResponseEntity<ApiResponse<Endorsement>> acceptEndorsement(@PathVariable Long id) {
         Endorsement accepted = endorsementService.acceptEndorsement(id);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Endorsement accepted", accepted, null));
     }
 
-    @Operation(summary = "Revoke endorsement", description = "ADMIN/ISSUER only: Revoke an endorsement.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Revoke endorsement", description = "ADMIN/ORGANIZATION only: Revoke an endorsement.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/{id}/revoke")
     public ResponseEntity<ApiResponse<Endorsement>> revokeEndorsement(@PathVariable Long id, @RequestBody(required = false) String reason) {
         Endorsement revoked = endorsementService.revokeEndorsement(id, reason);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Endorsement revoked", revoked, null));
     }
 
-    @Operation(summary = "Reject endorsement", description = "ADMIN/ISSUER only: Reject an endorsement.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Reject endorsement", description = "ADMIN/ORGANIZATION only: Reject an endorsement.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<Endorsement>> rejectEndorsement(@PathVariable Long id, @RequestBody(required = false) String reason) {
         Endorsement rejected = endorsementService.rejectEndorsement(id, reason);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Endorsement rejected", rejected, null));
     }
 
-    @Operation(summary = "Archive or unarchive endorsement", description = "ADMIN/ISSUER only: Archive or unarchive an endorsement. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Archive or unarchive endorsement", description = "ADMIN/ORGANIZATION only: Archive or unarchive an endorsement. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PutMapping("/{id}/archive")
     public ResponseEntity<ApiResponse<Endorsement>> archiveEndorsement(@PathVariable Long id, @RequestBody Map<String, Boolean> archiveRequest) {
         boolean archive = archiveRequest.getOrDefault("archive", true);
@@ -94,8 +96,8 @@ public class EndorsementController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
     }
 
-    @Operation(summary = "Bulk archive/unarchive endorsements", description = "ADMIN/ISSUER only: Bulk archive or unarchive endorsements. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Bulk archive/unarchive endorsements", description = "ADMIN/ORGANIZATION only: Bulk archive or unarchive endorsements. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/bulk-archive")
     public ResponseEntity<ApiResponse<List<Endorsement>>> bulkArchiveEndorsements(@RequestBody Map<String, Object> body) {
         List<Long> ids = ((List<?>) body.get("ids")).stream().map(id -> Long.valueOf(id.toString())).collect(Collectors.toList());
@@ -105,8 +107,8 @@ public class EndorsementController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
     }
 
-    @Operation(summary = "Bulk delete endorsements", description = "ADMIN/ISSUER only: Bulk delete endorsements. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Bulk delete endorsements", description = "ADMIN/ORGANIZATION only: Bulk delete endorsements. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/bulk-delete")
     public ResponseEntity<ApiResponse<Void>> bulkDeleteEndorsements(@RequestBody List<Long> ids) {
         endorsementService.bulkDeleteEndorsements(ids);

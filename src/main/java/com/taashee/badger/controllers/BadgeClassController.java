@@ -56,7 +56,7 @@ public class BadgeClassController {
         dto.archived = badgeClass.getArchived();
         dto.createdAt = badgeClass.getCreatedAt();
         dto.updatedAt = badgeClass.getUpdatedAt();
-        dto.issuerId = badgeClass.getIssuer() != null ? badgeClass.getIssuer().getId() : null;
+        dto.organizationId = badgeClass.getOrganization() != null ? badgeClass.getOrganization().getId() : null;
         // tags
         dto.tagNames = badgeClass.getTags() != null ? badgeClass.getTags().stream().map(tag -> tag.getName()).toList() : null;
         // alignments
@@ -80,8 +80,8 @@ public class BadgeClassController {
         return dto;
     }
 
-    @Operation(summary = "Create badge class", description = "ADMIN/ISSUER only: Create a new badge class.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Create badge class", description = "ADMIN/ORGANIZATION only: Create a new badge class.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("")
     public ResponseEntity<ApiResponse<BadgeClassResponseDTO>> createBadgeClass(@RequestBody BadgeClassDTO badgeClassDTO) {
         BadgeClass created = badgeClassService.createBadgeClassFromDTO(badgeClassDTO);
@@ -89,6 +89,7 @@ public class BadgeClassController {
     }
 
     @Operation(summary = "Get all badge classes", description = "Get a list of all badge classes.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("")
     public ResponseEntity<ApiResponse<List<BadgeClassResponseDTO>>> getAllBadgeClasses() {
         List<BadgeClass> badgeClasses = badgeClassService.getAllBadgeClasses();
@@ -97,6 +98,7 @@ public class BadgeClassController {
     }
 
     @Operation(summary = "Get badge class by ID", description = "Get badge class details by ID.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BadgeClassResponseDTO>> getBadgeClassById(@PathVariable Long id) {
         return badgeClassService.getBadgeClassById(id)
@@ -104,24 +106,24 @@ public class BadgeClassController {
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Badge class not found", null, "Badge class not found")));
     }
 
-    @Operation(summary = "Update badge class", description = "ADMIN/ISSUER only: Update a badge class.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Update badge class", description = "ADMIN/ORGANIZATION only: Update a badge class.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BadgeClassResponseDTO>> updateBadgeClass(@PathVariable Long id, @RequestBody BadgeClassDTO badgeClassDTO) {
         BadgeClass updated = badgeClassService.updateBadgeClassFromDTO(id, badgeClassDTO);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge class updated", toResponseDTO(updated), null));
     }
 
-    @Operation(summary = "Delete badge class", description = "ADMIN/ISSUER only: Delete a badge class.")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Delete badge class", description = "ADMIN/ORGANIZATION only: Delete a badge class.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteBadgeClass(@PathVariable Long id) {
         badgeClassService.deleteBadgeClass(id);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge class deleted", null, null));
     }
 
-    @Operation(summary = "Archive or unarchive badge class", description = "ADMIN/ISSUER only: Archive or unarchive a badge class. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Archive or unarchive badge class", description = "ADMIN/ORGANIZATION only: Archive or unarchive a badge class. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PutMapping("/{id}/archive")
     public ResponseEntity<ApiResponse<BadgeClass>> archiveBadgeClass(@PathVariable Long id, @RequestBody Map<String, Boolean> archiveRequest) {
         boolean archive = archiveRequest.getOrDefault("archive", true);
@@ -130,16 +132,16 @@ public class BadgeClassController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
     }
 
-    @Operation(summary = "Award badges to multiple recipients", description = "ADMIN/ISSUER only: Award badges in batch to recipients. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Award badges to multiple recipients", description = "ADMIN/ORGANIZATION only: Award badges in batch to recipients. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/{id}/award-enrollments")
     public ResponseEntity<ApiResponse<List<BadgeInstance>>> awardEnrollments(@PathVariable Long id, @RequestBody List<BadgeInstanceAwardRequest> requests) {
         List<BadgeInstance> awarded = badgeClassService.awardEnrollments(id, requests);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(HttpStatus.CREATED.value(), "Badges awarded", awarded, null));
     }
 
-    @Operation(summary = "Bulk archive/unarchive badge classes", description = "ADMIN/ISSUER only: Bulk archive or unarchive badge classes. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Bulk archive/unarchive badge classes", description = "ADMIN/ORGANIZATION only: Bulk archive or unarchive badge classes. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/bulk-archive")
     public ResponseEntity<ApiResponse<List<BadgeClass>>> bulkArchiveBadgeClasses(@RequestBody Map<String, Object> body) {
         List<Long> ids = ((List<?>) body.get("ids")).stream().map(id -> Long.valueOf(id.toString())).collect(Collectors.toList());
@@ -149,8 +151,8 @@ public class BadgeClassController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
     }
 
-    @Operation(summary = "Bulk delete badge classes", description = "ADMIN/ISSUER only: Bulk delete badge classes. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ISSUER')")
+    @Operation(summary = "Bulk delete badge classes", description = "ADMIN/ORGANIZATION only: Bulk delete badge classes. Author: Lokya Naik")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @PostMapping("/bulk-delete")
     public ResponseEntity<ApiResponse<Void>> bulkDeleteBadgeClasses(@RequestBody List<Long> ids) {
         badgeClassService.bulkDeleteBadgeClasses(ids);

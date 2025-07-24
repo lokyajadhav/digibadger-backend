@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "issuer_staff_invitations")
-public class IssuerStaffInvitation {
+@Table(name = "organization_staff_invitations")
+public class OrganizationStaffInvitation {
     public enum Status { PENDING, ACCEPTED, EXPIRED }
 
     @Id
@@ -16,7 +16,7 @@ public class IssuerStaffInvitation {
     private String email;
 
     @Column(nullable = false)
-    private Long issuerId;
+    private Long organizationId;
 
     @Column(nullable = false)
     private String staffRole;
@@ -45,8 +45,8 @@ public class IssuerStaffInvitation {
     public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-    public Long getIssuerId() { return issuerId; }
-    public void setIssuerId(Long issuerId) { this.issuerId = issuerId; }
+    public Long getOrganizationId() { return organizationId; }
+    public void setOrganizationId(Long organizationId) { this.organizationId = organizationId; }
     public String getStaffRole() { return staffRole; }
     public void setStaffRole(String staffRole) { this.staffRole = staffRole; }
     public Boolean getIsSigner() { return isSigner; }

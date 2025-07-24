@@ -7,10 +7,10 @@ import java.util.Map;
 public class BadgeInstanceDTO {
     public Long id;
     public Long badgeClassId;
-    public Long issuerId;
+    public Long organizationId;
     public Long recipientId;
     public LocalDateTime issuedOn;
-    public String publicKeyIssuer;
+    public String publicKeyOrganization;
     public String identifier;
     public String recipientType;
     public String awardType;
@@ -33,7 +33,7 @@ public class BadgeInstanceDTO {
     public boolean includeGradeAchieved;
     public String status;
     public String badgeClassName;
-    public String issuerName;
+    public String organizationName;
     public String recipientEmail;
     public String description;
     public String learningOutcomes;

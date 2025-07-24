@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Issuer {
+public class Organization {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,7 +35,7 @@ public class Issuer {
     private LocalDateTime updatedAt;
     private String badgrApp;
     private String oldJson;
-    @OneToMany(mappedBy = "issuer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BadgeClass> badges;
 
     // Getters and setters (only for English fields)
