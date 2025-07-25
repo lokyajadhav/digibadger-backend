@@ -91,6 +91,15 @@ public class OrganizationController {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Organizations deleted", null, null));
     }
 
+    @Operation(summary = "Get organizations for current user (ISSUER)", description = "Returns all organizations where the current authenticated user is mapped as staff (including owner). Author: Lokya Naik")
+    @PreAuthorize("hasRole('ISSUER')")
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<Organization>>> getMyOrganizations() {
+        String email = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Organization> orgs = organizationService.getOrganizationsForUser(email);
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", orgs, null));
+    }
+
     // Temporary test endpoint for development
     @Operation(summary = "Test endpoint", description = "Temporary test endpoint for development. Author: Lokya Naik")
     @GetMapping("/test")

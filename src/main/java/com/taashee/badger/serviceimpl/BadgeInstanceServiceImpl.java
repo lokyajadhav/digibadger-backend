@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
+import com.taashee.badger.exceptions.ApiException;
 
 @Service
 public class BadgeInstanceServiceImpl implements BadgeInstanceService {
@@ -203,7 +204,7 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
                 .orElseThrow(() -> new RuntimeException("BadgeClass not found: " + dto.badgeClassId));
             // Brand/logo validation
             if (badgeClass.getImage() == null || badgeClass.getImage().trim().isEmpty()) {
-                throw new RuntimeException("Cannot award badge instance: the selected badge class does not have a brand/logo/image.");
+                throw new ApiException("You must add a logo/image to this badge before it can be issued.", 400);
             }
             badgeInstance.setBadgeClass(badgeClass);
         }

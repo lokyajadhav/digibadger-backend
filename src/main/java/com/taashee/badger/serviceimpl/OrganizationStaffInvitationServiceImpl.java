@@ -14,6 +14,10 @@ import java.util.Optional;
 import com.taashee.badger.models.User;
 import com.taashee.badger.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.taashee.badger.repositories.OrganizationRepository;
+import com.taashee.badger.repositories.OrganizationStaffRepository;
+import com.taashee.badger.models.Organization;
+import com.taashee.badger.models.OrganizationStaff;
 
 @Service
 public class OrganizationStaffInvitationServiceImpl implements OrganizationStaffInvitationService {
@@ -33,6 +37,11 @@ public class OrganizationStaffInvitationServiceImpl implements OrganizationStaff
 
     @Value("${app.uiBaseUrl:http://localhost:5173}")
     private String uiBaseUrl;
+
+    @Autowired
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private OrganizationStaffRepository organizationStaffRepository;
 
     public boolean hasActiveInvitation(String email, Long organizationId) {
         List<OrganizationStaffInvitation> pending = invitationRepository.findByEmailAndOrganizationIdAndStatus(email, organizationId, OrganizationStaffInvitation.Status.PENDING);
@@ -101,22 +110,33 @@ public class OrganizationStaffInvitationServiceImpl implements OrganizationStaff
                 user.setEnabled(true);
                 user.setPassword(passwordEncoder.encode(defaultStaffPassword));
                 user.setRoles(new java.util.HashSet<>());
-                user.getRoles().add("ORGANIZATION");
+                user.getRoles().add("ISSUER");
                 isNewUser = true;
                 userRepository.save(user);
-            } else if (!user.getRoles().contains("ORGANIZATION")) {
-                user.getRoles().add("ORGANIZATION");
+            } else if (!user.getRoles().contains("ISSUER")) {
+                user.getRoles().add("ISSUER");
                 userRepository.save(user);
             }
             invitation.setStatus(OrganizationStaffInvitation.Status.ACCEPTED);
             invitation.setAcceptedAt(java.time.LocalDateTime.now());
             invitationRepository.save(invitation);
+            // Always create staff mapping if not already present
+            Organization organization = organizationRepository.findById(invitation.getOrganizationId()).orElseThrow(() -> new RuntimeException("Organization not found"));
+            boolean alreadyStaff = organizationStaffRepository.findByOrganizationIdAndUserId(organization.getId(), user.getId()).isPresent();
+            if (!alreadyStaff) {
+                OrganizationStaff staff = new OrganizationStaff();
+                staff.setOrganization(organization);
+                staff.setUser(user);
+                staff.setStaffRole(invitation.getStaffRole());
+                staff.setSigner(Boolean.TRUE.equals(invitation.getIsSigner()));
+                organizationStaffRepository.save(staff);
+            }
             // Send credentials email if new user
             if (isNewUser) {
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(user.getEmail());
                 message.setSubject("Your Badger Management Account is Ready");
-                message.setText("Congratulations! Your account has been created.\n\nLogin details:\nEmail: " + user.getEmail() + "\nPassword: " + defaultStaffPassword + "\nRole: ORGANIZATION\n\nPlease log in and change your password after your first login.\n\nIf you have any questions, contact your administrator.");
+                message.setText("Congratulations! Your account has been created.\n\nLogin details:\nEmail: " + user.getEmail() + "\nPassword: " + defaultStaffPassword + "\nRole: ISSUER\n\nPlease log in and change your password after your first login.\n\nIf you have any questions, contact your administrator.");
                 message.setFrom("appadmin@taashee.com");
                 emailVerificationService.sendCustomEmail(message);
             }

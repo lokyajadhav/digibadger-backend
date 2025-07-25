@@ -2,6 +2,7 @@ package com.taashee.badger.controllers;
 
 import com.taashee.badger.models.OrganizationStaff;
 import com.taashee.badger.services.OrganizationStaffService;
+import com.taashee.badger.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,8 @@ class OrganizationStaffDTO {
 public class OrganizationStaffController {
     @Autowired
     private OrganizationStaffService organizationStaffService;
+    @Autowired
+    private UserService userService;
 
     @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping
@@ -47,6 +50,19 @@ public class OrganizationStaffController {
     public List<OrganizationStaffDTO> getStaff(@PathVariable Long organizationId) {
         return organizationStaffService.getStaffByOrganizationId(organizationId)
             .stream().map(OrganizationStaffDTO::new).toList();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
+    @GetMapping("/me")
+    @Operation(summary = "Get current user's staff record for this organization", description = "Returns the staff record for the current authenticated user in the given organization.")
+    public ResponseEntity<OrganizationStaffDTO> getMyStaffRecord(@PathVariable Long organizationId) {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String email = (String) authentication.getPrincipal();
+        com.taashee.badger.models.User user = userService.findByEmail(email);
+        if (user == null) return ResponseEntity.status(404).build();
+        OrganizationStaff staff = organizationStaffService.getStaffByOrganizationIdAndUserId(organizationId, user.getId());
+        if (staff == null) return ResponseEntity.status(404).build();
+        return ResponseEntity.ok(new OrganizationStaffDTO(staff));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")

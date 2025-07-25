@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.taashee.badger.exceptions.ApiException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -44,5 +45,16 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiResponse<Object>> handleApiException(ApiException ex) {
+        ApiResponse<Object> response = new ApiResponse<>(
+            ex.getStatus(),
+            ex.getMessage(),
+            null,
+            null
+        );
+        return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
     }
 } 

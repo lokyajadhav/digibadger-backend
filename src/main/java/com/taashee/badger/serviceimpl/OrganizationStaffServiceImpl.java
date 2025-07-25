@@ -43,6 +43,11 @@ public class OrganizationStaffServiceImpl implements OrganizationStaffService {
     }
 
     @Override
+    public OrganizationStaff getStaffByOrganizationIdAndUserId(Long organizationId, Long userId) {
+        return organizationStaffRepository.findByOrganizationIdAndUserId(organizationId, userId).orElse(null);
+    }
+
+    @Override
     @Transactional
     public OrganizationStaff addStaffToOrganization(Long organizationId, OrganizationStaff staff) {
         // Ensure user exists
@@ -58,15 +63,15 @@ public class OrganizationStaffServiceImpl implements OrganizationStaffService {
             user.setRoles(new HashSet<>()); // Start with empty roles
             isNewUser = true;
         }
-        // Always add ORGANIZATION application role if not present
+        // Always add ISSUER role if not present
         if (user.getRoles() == null) user.setRoles(new HashSet<>());
-        if (!user.getRoles().contains("ORGANIZATION")) {
-            user.getRoles().add("ORGANIZATION");
+        if (!user.getRoles().contains("ISSUER")) {
+            user.getRoles().add("ISSUER");
         }
         // If user has any other application role (ADMIN, USER, etc.) and is being assigned as main organization, throw exception
         if (!isNewUser && staff.getStaffRole() != null && staff.getStaffRole().equalsIgnoreCase("owner")) {
             for (String role : user.getRoles()) {
-                if (!role.equals("ORGANIZATION")) {
+                if (!role.equals("ISSUER")) {
                     throw new RuntimeException("User already has another application role and cannot be assigned as organization.");
                 }
             }
@@ -111,7 +116,7 @@ public class OrganizationStaffServiceImpl implements OrganizationStaffService {
             List<OrganizationStaff> otherStaff = organizationStaffRepository.findByUserId(user.getId());
             if (otherStaff.isEmpty()) {
                 // Check if user has any other roles (besides ORGANIZATION)
-                if (user.getRoles() == null || user.getRoles().isEmpty() || (user.getRoles().size() == 1 && user.getRoles().contains("ORGANIZATION"))) {
+                if (user.getRoles() == null || user.getRoles().isEmpty() || (user.getRoles().size() == 1 && user.getRoles().contains("ISSUER"))) {
                     // Delete all invitations for this user
                     List<com.taashee.badger.models.OrganizationStaffInvitation> invites = invitationRepository.findByEmailAndStatus(user.getEmail(), com.taashee.badger.models.OrganizationStaffInvitation.Status.PENDING);
                     invites.addAll(invitationRepository.findByEmailAndStatus(user.getEmail(), com.taashee.badger.models.OrganizationStaffInvitation.Status.ACCEPTED));

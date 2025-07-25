@@ -36,7 +36,11 @@ public class Organization {
     private String badgrApp;
     private String oldJson;
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<BadgeClass> badges;
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<com.taashee.badger.models.OrganizationStaff> staff;
 
     // Getters and setters (only for English fields)
     public Long getId() { return id; }
@@ -63,6 +67,7 @@ public class Organization {
     public void setBadgrApp(String badgrApp) { this.badgrApp = badgrApp; }
     public String getOldJson() { return oldJson; }
     public void setOldJson(String oldJson) { this.oldJson = oldJson; }
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public List<BadgeClass> getBadges() { return badges; }
     public void setBadges(List<BadgeClass> badges) { this.badges = badges; }
     public String getInstitutionName() { return institutionName; }
@@ -71,4 +76,7 @@ public class Organization {
     public void setInstitutionIdentifier(String institutionIdentifier) { this.institutionIdentifier = institutionIdentifier; }
     public String getGradingTableUrl() { return gradingTableUrl; }
     public void setGradingTableUrl(String gradingTableUrl) { this.gradingTableUrl = gradingTableUrl; }
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public List<com.taashee.badger.models.OrganizationStaff> getStaff() { return staff; }
+    public void setStaff(List<com.taashee.badger.models.OrganizationStaff> staff) { this.staff = staff; }
 } 

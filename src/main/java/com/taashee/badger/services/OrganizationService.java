@@ -13,5 +13,6 @@ public interface OrganizationService {
     Organization archiveOrganization(Long id, boolean archive);
     List<Organization> bulkArchiveOrganizations(List<Long> ids, boolean archive);
     void bulkDeleteOrganizations(List<Long> ids);
+    List<Organization> getOrganizationsForUser(String email);
     // Add more methods as needed (e.g., archive, search, etc.)
 } 

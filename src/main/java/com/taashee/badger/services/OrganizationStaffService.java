@@ -14,4 +14,5 @@ public interface OrganizationStaffService {
     void removeStaff(Long staffId);
     boolean userExists(String email);
     void removeStaffCompletely(Long organizationId, Long staffId, boolean fullDelete);
+    OrganizationStaff getStaffByOrganizationIdAndUserId(Long organizationId, Long userId);
 } 

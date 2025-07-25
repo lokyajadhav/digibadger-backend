@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import com.taashee.badger.repositories.OrganizationStaffRepository;
 
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
@@ -28,13 +29,15 @@ public class OrganizationServiceImpl implements OrganizationService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private EmailVerificationService emailVerificationService;
+    @Autowired
+    private OrganizationStaffRepository organizationStaffRepository;
     @Value("${staff.default.password}")
     private String defaultStaffPassword;
 
     @Override
     @Transactional
     public Organization createOrganization(Organization organization) {
-        // Ensure main contact/owner exists as user with ORGANIZATION role
+        // Ensure main contact/owner exists as user with ISSUER role
         String ownerEmail = organization.getEmail();
         if (ownerEmail == null || ownerEmail.isEmpty()) {
             throw new RuntimeException("Organization email (main contact) is required");
@@ -51,22 +54,25 @@ public class OrganizationServiceImpl implements OrganizationService {
             user.setRoles(new HashSet<>());
             isNewUser = true;
         }
-        // Always add ORGANIZATION application role if not present
+        // Always add ISSUER role if not present
         if (user.getRoles() == null) user.setRoles(new HashSet<>());
-        if (!user.getRoles().contains("ORGANIZATION")) {
-            user.getRoles().add("ORGANIZATION");
-        }
-        // If user has any other application role (ADMIN, USER, etc.), throw exception
-        for (String role : user.getRoles()) {
-            if (!role.equals("ORGANIZATION")) {
-                throw new RuntimeException("User already has another application role and cannot be assigned as organization.");
-            }
+        if (!user.getRoles().contains("ISSUER")) {
+            user.getRoles().add("ISSUER");
         }
         userRepository.save(user);
         if (isNewUser) {
             emailVerificationService.sendStaffInvitationEmail(user, defaultStaffPassword);
         }
-        return organizationRepository.save(organization);
+        Organization savedOrg = organizationRepository.save(organization);
+        // Map user as main owner staff
+        com.taashee.badger.models.OrganizationStaff staff = new com.taashee.badger.models.OrganizationStaff();
+        staff.setOrganization(savedOrg);
+        staff.setUser(user);
+        staff.setStaffRole("owner");
+        staff.setSigner(true);
+        // Save staff mapping
+        organizationStaffRepository.save(staff);
+        return savedOrg;
     }
 
     @Override
@@ -74,15 +80,27 @@ public class OrganizationServiceImpl implements OrganizationService {
     public Organization updateOrganization(Long id, Organization organization) {
         Organization existing = organizationRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Organization not found"));
-        // Preserve badges collection
-        organization.setBadges(existing.getBadges());
-        organization.setId(id);
-        // Remove old staff processing logic
-        return organizationRepository.save(organization);
+        // Only update allowed fields, do not touch staff or badges collections
+        existing.setNameEnglish(organization.getNameEnglish());
+        existing.setDescriptionEnglish(organization.getDescriptionEnglish());
+        existing.setImageEnglish(organization.getImageEnglish());
+        existing.setUrlEnglish(organization.getUrlEnglish());
+        existing.setEmail(organization.getEmail());
+        existing.setFaculty(organization.getFaculty());
+        existing.setInstitutionName(organization.getInstitutionName());
+        existing.setInstitutionIdentifier(organization.getInstitutionIdentifier());
+        existing.setGradingTableUrl(organization.getGradingTableUrl());
+        existing.setArchived(organization.getArchived());
+        existing.setBadgrApp(organization.getBadgrApp());
+        existing.setOldJson(organization.getOldJson());
+        // Do NOT set staff or badges collections!
+        return organizationRepository.save(existing);
     }
 
     @Override
     public void deleteOrganization(Long id) {
+        // Remove all staff mappings for this organization
+        organizationStaffRepository.deleteByOrganizationId(id);
         organizationRepository.deleteById(id);
     }
 
@@ -116,5 +134,25 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public void bulkDeleteOrganizations(List<Long> ids) {
         organizationRepository.deleteAllById(ids);
+    }
+
+    @Override
+    public List<Organization> getOrganizationsForUser(String email) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return List.of();
+        List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) return List.of();
+        // Return only minimal organization info to avoid proxy issues
+        return staffList.stream()
+            .map(s -> {
+                Organization org = new Organization();
+                org.setId(s.getOrganization().getId());
+                org.setNameEnglish(s.getOrganization().getNameEnglish());
+                org.setEmail(s.getOrganization().getEmail());
+                org.setArchived(s.getOrganization().getArchived());
+                return org;
+            })
+            .distinct()
+            .toList();
     }
 } 
