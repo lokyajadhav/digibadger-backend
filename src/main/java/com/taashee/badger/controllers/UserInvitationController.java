@@ -42,8 +42,8 @@ public class UserInvitationController {
     private String defaultPassword;
 
     @Operation(summary = "Invite a user", description = "ADMIN only: Invite a user by email and role. Author: Lokya Naik")
-    @PostMapping("/admin/invitations")
     @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/invitations")
     public ResponseEntity<ApiResponse<UserInvitation>> inviteUser(@RequestBody Map<String, String> body, @RequestParam Long adminId) {
         String email = body.get("email");
         String role = body.get("role");
@@ -119,8 +119,8 @@ public class UserInvitationController {
     }
 
     @Operation(summary = "Bulk import users", description = "ADMIN only: Bulk invite users by Excel upload. Author: Lokya Naik")
-    @PostMapping("/admin/users/import")
     @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/users/import")
     public ResponseEntity<ApiResponse<Map<String, Object>>> importUsersBulk(@RequestBody java.util.List<Map<String, String>> users, @RequestParam Long adminId) {
         User admin = userRepository.findById(adminId).orElse(null);
         if (admin == null) {

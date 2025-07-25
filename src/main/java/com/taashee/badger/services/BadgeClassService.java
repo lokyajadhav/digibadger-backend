@@ -3,6 +3,7 @@ package com.taashee.badger.services;
 import com.taashee.badger.models.BadgeClass;
 import com.taashee.badger.models.BadgeInstance;
 import com.taashee.badger.models.BadgeInstanceAwardRequest;
+import com.taashee.badger.models.BadgeClassDTO;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,5 +17,7 @@ public interface BadgeClassService {
     List<BadgeInstance> awardEnrollments(Long badgeClassId, java.util.List<com.taashee.badger.models.BadgeInstanceAwardRequest> requests);
     List<BadgeClass> bulkArchiveBadgeClasses(List<Long> ids, boolean archive);
     void bulkDeleteBadgeClasses(List<Long> ids);
+    BadgeClass createBadgeClassFromDTO(BadgeClassDTO badgeClassDTO);
+    BadgeClass updateBadgeClassFromDTO(Long id, BadgeClassDTO badgeClassDTO);
     // Add more methods as needed (e.g., archive, search, etc.)
 } 

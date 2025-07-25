@@ -1,7 +1,7 @@
 package com.taashee.badger.controllers;
 
 import com.taashee.badger.models.BadgeClass;
-import com.taashee.badger.models.Issuer;
+import com.taashee.badger.models.Organization;
 import com.taashee.badger.models.BadgeInstance;
 import com.taashee.badger.models.ApiResponse;
 import com.taashee.badger.models.BadgeInstanceCollection;
@@ -12,7 +12,7 @@ import com.taashee.badger.repositories.TermsOfServiceRepository;
 import com.taashee.badger.repositories.UserTermsAgreementRepository;
 import com.taashee.badger.repositories.UserRepository;
 import com.taashee.badger.services.BadgeClassService;
-import com.taashee.badger.services.IssuerService;
+import com.taashee.badger.services.OrganizationService;
 import com.taashee.badger.services.BadgeInstanceService;
 import com.taashee.badger.services.BadgeInstanceCollectionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,14 +24,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-@Tag(name = "Public APIs", description = "Public APIs for badge, issuer, assertion, and collection discovery/validation. Author: Lokya Naik")
+@Tag(name = "Public APIs", description = "Public APIs for badge, organization, assertion, and collection discovery/validation. Author: Lokya Naik")
 @RestController
 @RequestMapping("/api/public")
 public class PublicController {
     @Autowired
     private BadgeClassService badgeClassService;
     @Autowired
-    private IssuerService issuerService;
+    private OrganizationService organizationService;
     @Autowired
     private BadgeInstanceService badgeInstanceService;
     @Autowired
@@ -51,14 +51,6 @@ public class PublicController {
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Badge not found", null, "Badge not found")));
     }
 
-    @Operation(summary = "Get public issuer info", description = "Get public info for an issuer.")
-    @GetMapping("/issuers/{id}")
-    public ResponseEntity<ApiResponse<Issuer>> getPublicIssuer(@PathVariable Long id) {
-        return issuerService.getIssuerById(id)
-            .map(issuer -> ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", issuer, null)))
-            .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Issuer not found", null, "Issuer not found")));
-    }
-
     @Operation(summary = "Get public assertion info", description = "Get public info for a badge assertion.")
     @GetMapping("/assertions/{id}")
     public ResponseEntity<ApiResponse<BadgeInstance>> getPublicAssertion(@PathVariable Long id) {
@@ -72,7 +64,7 @@ public class PublicController {
     @GetMapping("/collections/{id}")
     public ResponseEntity<ApiResponse<BadgeInstanceCollection>> getPublicCollection(@PathVariable Long id) {
         return badgeInstanceCollectionService.getCollection(id)
-            .filter(BadgeInstanceCollection::isPublic)
+            .filter(BadgeInstanceCollection::isPublicCollection)
             .map(col -> ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", col, null)))
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Collection not found or not public", null, "Collection not found or not public")));
     }

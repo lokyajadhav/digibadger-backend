@@ -1,6 +1,7 @@
 package com.taashee.badger.services;
 
 import com.taashee.badger.models.BadgeInstance;
+import com.taashee.badger.models.BadgeInstanceDTO;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,5 +17,7 @@ public interface BadgeInstanceService {
     List<BadgeInstance> bulkArchiveBadgeInstances(List<Long> ids, boolean archive);
     void bulkDeleteBadgeInstances(List<Long> ids);
     List<BadgeInstance> revokeBadgeInstances(List<Long> ids, String revocationReason);
+    BadgeInstance createBadgeInstanceFromDTO(BadgeInstanceDTO badgeInstanceDTO);
+    BadgeInstance updateBadgeInstanceFromDTO(Long id, BadgeInstanceDTO badgeInstanceDTO);
     // Add more methods as needed (e.g., revoke, award, search, etc.)
 } 

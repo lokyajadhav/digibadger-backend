@@ -49,8 +49,7 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/v3/api-docs.yaml",
                     "/oauth2/**",
-                    "/login/oauth2/**",
-                    "/api/issuers/**" // Temporarily allow all issuer endpoints for testing
+                    "/login/oauth2/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             .and()
