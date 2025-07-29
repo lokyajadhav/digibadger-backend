@@ -34,6 +34,9 @@ public class UserInvitation {
 
     private LocalDateTime acceptedAt;
 
+    @Column(nullable = true)
+    private Long organizationId; // For organization user invitations
+
     // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -51,4 +54,6 @@ public class UserInvitation {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getAcceptedAt() { return acceptedAt; }
     public void setAcceptedAt(LocalDateTime acceptedAt) { this.acceptedAt = acceptedAt; }
+    public Long getOrganizationId() { return organizationId; }
+    public void setOrganizationId(Long organizationId) { this.organizationId = organizationId; }
 } 
