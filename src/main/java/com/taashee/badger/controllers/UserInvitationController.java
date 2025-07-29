@@ -3,8 +3,12 @@ package com.taashee.badger.controllers;
 import com.taashee.badger.models.UserInvitation;
 import com.taashee.badger.models.User;
 import com.taashee.badger.models.ApiResponse;
+import com.taashee.badger.models.OrganizationUser;
+import com.taashee.badger.models.Organization;
 import com.taashee.badger.repositories.UserInvitationRepository;
 import com.taashee.badger.repositories.UserRepository;
+import com.taashee.badger.repositories.OrganizationUserRepository;
+import com.taashee.badger.repositories.OrganizationRepository;
 import com.taashee.badger.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +42,10 @@ public class UserInvitationController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private EmailVerificationService emailVerificationService;
+    @Autowired
+    private OrganizationUserRepository organizationUserRepository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
     @Value("${staff.default.password}")
     private String defaultPassword;
 
@@ -108,6 +116,19 @@ public class UserInvitationController {
         invitation.setStatus(UserInvitation.Status.ACCEPTED);
         invitation.setAcceptedAt(LocalDateTime.now());
         invitationRepository.save(invitation);
+        
+        // If this is an organization invitation, map user to organization
+        if (invitation.getOrganizationId() != null) {
+            Organization organization = organizationRepository.findById(invitation.getOrganizationId()).orElse(null);
+            if (organization != null) {
+                OrganizationUser orgUser = new OrganizationUser();
+                orgUser.setUser(user);
+                orgUser.setOrganization(organization);
+                orgUser.setUserType("STUDENT");
+                organizationUserRepository.save(orgUser);
+            }
+        }
+        
         // Send credentials email
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());
