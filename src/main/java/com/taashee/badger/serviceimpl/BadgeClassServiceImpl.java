@@ -1,6 +1,7 @@
 package com.taashee.badger.serviceimpl;
 
 import com.taashee.badger.models.BadgeClass;
+import com.taashee.badger.models.User;
 import com.taashee.badger.repositories.BadgeClassRepository;
 import com.taashee.badger.services.BadgeClassService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -196,6 +197,12 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         }
         BadgeClass badgeClass = new BadgeClass();
         mapDTOToEntity(dto, badgeClass);
+        
+        // Set createdAt if not already set
+        if (badgeClass.getCreatedAt() == null) {
+            badgeClass.setCreatedAt(java.time.LocalDateTime.now());
+        }
+        
         return badgeClassRepository.save(badgeClass);
     }
 
@@ -278,6 +285,7 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         badgeClass.setImage(dto.image);
         badgeClass.setDescription(dto.description);
         badgeClass.setCriteriaText(dto.criteriaText);
+        badgeClass.setCriteriaUrl(dto.criteriaUrl);
         badgeClass.setFormal(dto.formal);
         badgeClass.setIsPrivate(dto.isPrivate);
         badgeClass.setNarrativeRequired(dto.narrativeRequired);
@@ -297,7 +305,29 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         badgeClass.setStackable(dto.stackable);
         badgeClass.setEqfNlqfLevelVerified(dto.eqfNlqfLevelVerified);
         badgeClass.setBadgeClassType(dto.badgeClassType);
-        badgeClass.setExpirationPeriod(dto.expirationPeriod);
+        
+        // Parse expiration period from string to Duration
+        if (dto.expirationPeriod != null && !dto.expirationPeriod.trim().isEmpty()) {
+            try {
+                badgeClass.setExpirationPeriod(java.time.Duration.parse(dto.expirationPeriod));
+            } catch (Exception e) {
+                // If parsing fails, set to 1 year
+                badgeClass.setExpirationPeriod(java.time.Duration.ofDays(365));
+            }
+        } else {
+            badgeClass.setExpirationPeriod(null);
+        }
+        
+        if (dto.expirationDate != null && !dto.expirationDate.trim().isEmpty()) {
+            try {
+                // Parse date string (YYYY-MM-DD) and convert to LocalDateTime at start of day
+                java.time.LocalDate date = java.time.LocalDate.parse(dto.expirationDate);
+                badgeClass.setExpirationDate(date.atStartOfDay());
+            } catch (Exception e) {
+                // If parsing fails, set to 1 year from now
+                badgeClass.setExpirationDate(java.time.LocalDateTime.now().plusYears(1));
+            }
+        }
         badgeClass.setArchived(dto.archived);
         // Set organization if provided
         if (dto.organizationId != null) {
@@ -350,6 +380,216 @@ public class BadgeClassServiceImpl implements BadgeClassService {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to serialize extensions", e);
             }
+        }
+    }
+
+    @Override
+    public java.util.Map<String, Object> getBadgeRecipients(Long badgeClassId, int page, int size, String search, String status, String sortBy, String sortOrder, String startDate, String endDate) {
+        // Get all badge instances for this badge class
+        List<BadgeInstance> allInstances = badgeInstanceRepository.findByBadgeClassId(badgeClassId);
+        
+        // Apply filters
+        List<BadgeInstance> filteredInstances = allInstances.stream()
+            .filter(instance -> {
+                // Search filter
+                if (search != null && !search.trim().isEmpty()) {
+                    String searchLower = search.toLowerCase();
+                    User recipient = instance.getRecipient();
+                    if (recipient != null) {
+                        String name = (recipient.getFirstName() + " " + recipient.getLastName()).toLowerCase();
+                        String email = recipient.getEmail().toLowerCase();
+                        if (!name.contains(searchLower) && !email.contains(searchLower)) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Status filter
+                if (status != null && !status.trim().isEmpty()) {
+                    BadgeInstance.Status currentStatus = instance.getCurrentStatus();
+                    if (!currentStatus.name().equalsIgnoreCase(status)) {
+                        return false;
+                    }
+                }
+                
+                // Date range filter
+                if (startDate != null && !startDate.trim().isEmpty()) {
+                    try {
+                        java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+                        if (instance.getIssuedOn().toLocalDate().isBefore(start)) {
+                            return false;
+                        }
+                    } catch (Exception e) {
+                        // Ignore invalid dates
+                    }
+                }
+                
+                if (endDate != null && !endDate.trim().isEmpty()) {
+                    try {
+                        java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+                        if (instance.getIssuedOn().toLocalDate().isAfter(end)) {
+                            return false;
+                        }
+                    } catch (Exception e) {
+                        // Ignore invalid dates
+                    }
+                }
+                
+                return true;
+            })
+            .collect(java.util.stream.Collectors.toList());
+        
+        // Apply sorting
+        if (sortBy != null && !sortBy.trim().isEmpty()) {
+            filteredInstances.sort((a, b) -> {
+                int comparison = 0;
+                switch (sortBy.toLowerCase()) {
+                    case "issuedon":
+                        comparison = a.getIssuedOn().compareTo(b.getIssuedOn());
+                        break;
+                    case "email":
+                        comparison = a.getRecipient().getEmail().compareTo(b.getRecipient().getEmail());
+                        break;
+                    case "name":
+                        String nameA = a.getRecipient().getFirstName() + " " + a.getRecipient().getLastName();
+                        String nameB = b.getRecipient().getFirstName() + " " + b.getRecipient().getLastName();
+                        comparison = nameA.compareTo(nameB);
+                        break;
+                    default:
+                        comparison = a.getIssuedOn().compareTo(b.getIssuedOn());
+                }
+                return "desc".equalsIgnoreCase(sortOrder) ? -comparison : comparison;
+            });
+        }
+        
+        // Apply pagination
+        int total = filteredInstances.size();
+        int totalPages = (int) Math.ceil((double) total / size);
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, total);
+        
+        List<BadgeInstance> paginatedInstances = filteredInstances.subList(startIndex, endIndex);
+        
+        // Convert to DTOs
+        List<java.util.Map<String, Object>> recipients = paginatedInstances.stream()
+            .map(instance -> {
+                User recipient = instance.getRecipient();
+                java.util.Map<String, Object> recipientData = new java.util.HashMap<>();
+                recipientData.put("id", instance.getId());
+                recipientData.put("recipientId", recipient.getId());
+                recipientData.put("email", recipient.getEmail());
+                recipientData.put("firstName", recipient.getFirstName());
+                recipientData.put("lastName", recipient.getLastName());
+                recipientData.put("issuedOn", instance.getIssuedOn());
+                recipientData.put("status", instance.getCurrentStatus());
+                recipientData.put("revoked", instance.isRevoked());
+                recipientData.put("expiresAt", instance.getExpiresAt());
+                return recipientData;
+            })
+            .collect(java.util.stream.Collectors.toList());
+        
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("content", recipients);
+        result.put("totalElements", total);
+        result.put("totalPages", totalPages);
+        result.put("currentPage", page);
+        result.put("size", size);
+        result.put("first", page == 0);
+        result.put("last", page >= totalPages - 1);
+        
+        return result;
+    }
+
+    @Override
+    public java.util.Map<String, Object> exportBadgeClass(Long badgeClassId, boolean includeAssertions, boolean compressOutput) {
+        BadgeClass badgeClass = badgeClassRepository.findById(badgeClassId)
+            .orElseThrow(() -> new RuntimeException("Badge class not found"));
+        
+        // Create Open Badges 2.1 compliant JSON
+        java.util.Map<String, Object> badgeJson = new java.util.HashMap<>();
+        badgeJson.put("@context", "https://w3id.org/openbadges/v2");
+        badgeJson.put("type", "BadgeClass");
+        badgeJson.put("id", "https://api.badgr.io/public/badges/" + badgeClass.getId());
+        badgeJson.put("name", badgeClass.getName());
+        badgeJson.put("description", badgeClass.getDescription());
+        badgeJson.put("image", "https://api.badgr.io/public/badges/" + badgeClass.getId() + "/image");
+        badgeJson.put("criteria", java.util.Map.of("narrative", badgeClass.getCriteriaText()));
+        badgeJson.put("issuer", "https://api.badgr.io/public/issuers/" + badgeClass.getOrganization().getId());
+        
+        if (includeAssertions) {
+            List<BadgeInstance> instances = badgeInstanceRepository.findByBadgeClassId(badgeClassId);
+            List<java.util.Map<String, Object>> assertions = instances.stream()
+                .map(instance -> {
+                    java.util.Map<String, Object> assertion = new java.util.HashMap<>();
+                    assertion.put("@context", "https://w3id.org/openbadges/v2");
+                    assertion.put("type", "Assertion");
+                    assertion.put("id", "https://api.badgr.io/public/assertions/" + instance.getId());
+                    assertion.put("recipient", java.util.Map.of(
+                        "type", "email",
+                        "hashed", false,
+                        "identity", instance.getRecipient().getEmail()
+                    ));
+                    assertion.put("badge", "https://api.badgr.io/public/badges/" + badgeClass.getId());
+                    assertion.put("issuedOn", instance.getIssuedOn().toString());
+                    assertion.put("verification", java.util.Map.of(
+                        "type", "HostedBadge"
+                    ));
+                    return assertion;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            badgeJson.put("assertions", assertions);
+        }
+        
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("badgeClass", badgeJson);
+        result.put("compressed", compressOutput);
+        
+        return result;
+    }
+
+    @Override
+    public BadgeClass importBadgeClass(Long badgeClassId, String badgeUrl, String badgeJson, String importType) {
+        BadgeClass badgeClass = badgeClassRepository.findById(badgeClassId)
+            .orElseThrow(() -> new RuntimeException("Badge class not found"));
+        
+        try {
+            java.util.Map<String, Object> importedData = null;
+            
+            if (badgeUrl != null && !badgeUrl.trim().isEmpty()) {
+                // Import from URL
+                java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(badgeUrl))
+                    .build();
+                java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+                importedData = objectMapper.readValue(response.body(), java.util.Map.class);
+            } else if (badgeJson != null && !badgeJson.trim().isEmpty()) {
+                // Import from JSON
+                importedData = objectMapper.readValue(badgeJson, java.util.Map.class);
+            }
+            
+            if (importedData != null) {
+                // Update badge class with imported data
+                if (importedData.containsKey("name")) {
+                    badgeClass.setName((String) importedData.get("name"));
+                }
+                if (importedData.containsKey("description")) {
+                    badgeClass.setDescription((String) importedData.get("description"));
+                }
+                if (importedData.containsKey("criteria")) {
+                    java.util.Map<String, Object> criteria = (java.util.Map<String, Object>) importedData.get("criteria");
+                    if (criteria.containsKey("narrative")) {
+                        badgeClass.setCriteriaText((String) criteria.get("narrative"));
+                    }
+                }
+                
+                return badgeClassRepository.save(badgeClass);
+            }
+            
+            throw new RuntimeException("No valid import data provided");
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error importing badge class: " + e.getMessage(), e);
         }
     }
 } 

@@ -12,6 +12,7 @@ public class BadgeClassResponseDTO {
     public String image;
     public String description;
     public String criteriaText;
+    public String criteriaUrl;
     public boolean formal;
     public boolean isPrivate;
     public boolean narrativeRequired;
@@ -32,14 +33,17 @@ public class BadgeClassResponseDTO {
     public boolean eqfNlqfLevelVerified;
     public String badgeClassType;
     public Duration expirationPeriod;
+    public LocalDateTime expirationDate;
     public boolean archived;
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;
     public Long organizationId;
+    public OrganizationDTO organization;
     public List<String> tagNames;
     public List<AlignmentDTO> alignments;
     public List<Long> institutionIds;
     public Map<String, Object> extensions;
+    public Long activeAwardsCount;
 
     public static class AlignmentDTO {
         public String targetName;
@@ -47,5 +51,21 @@ public class BadgeClassResponseDTO {
         public String targetDescription;
         public String targetFramework;
         public String targetCode;
+    }
+
+    public static class OrganizationDTO {
+        public Long id;
+        public String nameEnglish;
+        public String descriptionEnglish;
+        public String imageEnglish;
+        public String urlEnglish;
+        public String email;
+        public String faculty;
+        public String institutionName;
+        public String institutionIdentifier;
+        public String gradingTableUrl;
+        public boolean archived;
+        public LocalDateTime createdAt;
+        public LocalDateTime updatedAt;
     }
 } 

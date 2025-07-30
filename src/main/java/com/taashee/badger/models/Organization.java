@@ -16,15 +16,31 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 500)
     private String nameEnglish;
+    
+    @Column(columnDefinition = "TEXT")
     private String descriptionEnglish;
+    
     @Column(columnDefinition = "TEXT")
     private String imageEnglish;
+    
+    @Column(length = 1000)
     private String urlEnglish;
+    
+    @Column(length = 255)
     private String email;
+    
+    @Column(length = 500)
     private String faculty;
+    
+    @Column(length = 500)
     private String institutionName;
+    
+    @Column(length = 255)
     private String institutionIdentifier;
+    
+    @Column(length = 1000)
     private String gradingTableUrl;
 
     private boolean archived;
@@ -33,8 +49,13 @@ public class Organization {
     private LocalDateTime createdAt;
     @LastModifiedDate
     private LocalDateTime updatedAt;
+    
+    @Column(length = 1000)
     private String badgrApp;
+    
+    @Column(columnDefinition = "TEXT")
     private String oldJson;
+    
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnore
     private List<BadgeClass> badges;

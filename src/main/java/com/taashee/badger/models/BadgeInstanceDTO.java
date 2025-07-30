@@ -9,6 +9,9 @@ public class BadgeInstanceDTO {
     public Long badgeClassId;
     public Long organizationId;
     public Long recipientId;
+    public String recipientName;
+    public String recipientEmail;
+    public String issueDate; // ISO string from frontend
     public LocalDateTime issuedOn;
     public String publicKeyOrganization;
     public String identifier;
@@ -19,7 +22,8 @@ public class BadgeInstanceDTO {
     public String image;
     public boolean revoked;
     public String revocationReason;
-    public LocalDateTime expiresAt;
+    public String expiresAt; // ISO string from frontend
+    public LocalDateTime expirationDateTime;
     public String acceptance;
     public String narrative;
     public boolean hashed;
@@ -34,14 +38,13 @@ public class BadgeInstanceDTO {
     public String status;
     public String badgeClassName;
     public String organizationName;
-    public String recipientEmail;
     public String description;
     public String learningOutcomes;
     public List<EvidenceDTO> evidenceItems;
     public Map<String, Object> extensions;
 
     public static class EvidenceDTO {
-        public String evidenceUrl;
+        public String url; // Changed from evidenceUrl to match frontend
         public String narrative;
         public String name;
         public String description;

@@ -18,4 +18,9 @@ public interface OrganizationStaffRepository extends JpaRepository<OrganizationS
     @Transactional
     @Query("DELETE FROM OrganizationStaff os WHERE os.organization.id = :organizationId")
     void deleteByOrganizationId(Long organizationId);
+    
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM OrganizationStaff os WHERE os.user.id = :userId")
+    void deleteByUserId(Long userId);
 } 

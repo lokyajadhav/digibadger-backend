@@ -1,6 +1,5 @@
 package com.taashee.badger.models;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +9,7 @@ public class BadgeClassDTO {
     public String image;
     public String description;
     public String criteriaText;
+    public String criteriaUrl;
     public boolean formal;
     public boolean isPrivate;
     public boolean narrativeRequired;
@@ -29,7 +29,8 @@ public class BadgeClassDTO {
     public boolean stackable;
     public boolean eqfNlqfLevelVerified;
     public String badgeClassType;
-    public Duration expirationPeriod;
+    public String expirationPeriod;
+    public String expirationDate;
     public boolean archived;
     public List<String> tagNames;
     public List<AlignmentDTO> alignments;

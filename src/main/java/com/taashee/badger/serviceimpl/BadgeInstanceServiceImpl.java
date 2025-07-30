@@ -212,11 +212,29 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
             Organization organization = organizationRepository.findById(dto.organizationId).orElseThrow(() -> new RuntimeException("Organization not found: " + dto.organizationId));
             badgeInstance.setOrganization(organization);
         }
+        
+        // Handle recipient by email if recipientId is not provided
         if (dto.recipientId != null) {
             User recipient = userRepository.findById(dto.recipientId).orElseThrow(() -> new RuntimeException("User not found: " + dto.recipientId));
             badgeInstance.setRecipient(recipient);
+        } else if (dto.recipientEmail != null && !dto.recipientEmail.trim().isEmpty()) {
+            User recipient = userRepository.findByEmail(dto.recipientEmail).orElse(null);
+            if (recipient != null) {
+                badgeInstance.setRecipient(recipient);
+            }
         }
-        badgeInstance.setIssuedOn(dto.issuedOn);
+        
+        // Handle issue date from ISO string
+        if (dto.issueDate != null && !dto.issueDate.trim().isEmpty()) {
+            try {
+                badgeInstance.setIssuedOn(java.time.LocalDateTime.parse(dto.issueDate.replace("Z", "")));
+            } catch (Exception e) {
+                throw new RuntimeException("Invalid issue date format: " + dto.issueDate);
+            }
+        } else {
+            badgeInstance.setIssuedOn(dto.issuedOn);
+        }
+        
         badgeInstance.setPublicKeyOrganization(dto.publicKeyOrganization);
         badgeInstance.setIdentifier(dto.identifier);
         badgeInstance.setRecipientType(dto.recipientType);
@@ -226,7 +244,18 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         badgeInstance.setImage(dto.image);
         badgeInstance.setRevoked(dto.revoked);
         badgeInstance.setRevocationReason(dto.revocationReason);
-        badgeInstance.setExpiresAt(dto.expiresAt);
+        
+        // Handle expiration date from ISO string
+        if (dto.expiresAt != null && !dto.expiresAt.trim().isEmpty()) {
+            try {
+                badgeInstance.setExpiresAt(java.time.LocalDateTime.parse(dto.expiresAt.replace("Z", "")));
+            } catch (Exception e) {
+                throw new RuntimeException("Invalid expiration date format: " + dto.expiresAt);
+            }
+        } else {
+            badgeInstance.setExpiresAt(dto.expirationDateTime);
+        }
+        
         badgeInstance.setAcceptance(dto.acceptance);
         badgeInstance.setNarrative(dto.narrative);
         badgeInstance.setHashed(dto.hashed);
@@ -241,6 +270,7 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         badgeInstance.setStatus(dto.status != null ? BadgeInstance.Status.valueOf(dto.status) : null);
         badgeInstance.setDescription(dto.description);
         badgeInstance.setLearningOutcomes(dto.learningOutcomes);
+        
         // Extensions
         if (dto.extensions != null) {
             try {
@@ -251,23 +281,28 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
         } else {
             badgeInstance.setExtensions(null);
         }
+        
         // Evidence items
-        if (dto.evidenceItems != null) {
+        if (dto.evidenceItems != null && !dto.evidenceItems.isEmpty()) {
             ArrayList<Evidence> evidenceList = new ArrayList<>();
             for (BadgeInstanceDTO.EvidenceDTO e : dto.evidenceItems) {
-                Evidence evidence = new Evidence();
-                evidence.setBadgeInstance(badgeInstance);
-                evidence.setEvidenceUrl(e.evidenceUrl);
-                evidence.setNarrative(e.narrative);
-                evidence.setName(e.name);
-                evidence.setDescription(e.description);
-                evidenceList.add(evidence);
+                // Only add evidence items that have content
+                if ((e.narrative != null && !e.narrative.trim().isEmpty()) || 
+                    (e.url != null && !e.url.trim().isEmpty())) {
+                    Evidence evidence = new Evidence();
+                    evidence.setBadgeInstance(badgeInstance);
+                    evidence.setEvidenceUrl(e.url); // Use url field from frontend
+                    evidence.setNarrative(e.narrative);
+                    evidence.setName(e.name);
+                    evidence.setDescription(e.description);
+                    evidenceList.add(evidence);
+                }
             }
             badgeInstance.setEvidenceItems(evidenceList);
         }
+        
         // Validation logic for narrative/evidence
-        // BadgeClass badgeClass = badgeInstance.getBadgeClass(); // TODO: Implement getBadgeClass() in BadgeInstance if not present
-        BadgeClass badgeClass = null; // fallback
+        BadgeClass badgeClass = badgeInstance.getBadgeClass();
         if (badgeClass != null) {
             if (badgeClass.isNarrativeRequired() && (dto.narrative == null || dto.narrative.trim().isEmpty())) {
                 throw new RuntimeException("Narrative is required for this badge class");

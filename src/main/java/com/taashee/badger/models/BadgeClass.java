@@ -3,6 +3,8 @@ package com.taashee.badger.models;
 import jakarta.persistence.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,6 +26,7 @@ public class BadgeClass {
     private String image;
     private String description;
     private String criteriaText;
+    private String criteriaUrl;
     private boolean formal;
     private boolean isPrivate;
     private boolean narrativeRequired;
@@ -45,8 +48,14 @@ public class BadgeClass {
     private String badgeClassType;
     private String oldJson; // For legacy/compatibility
     private Duration expirationPeriod;
+    private LocalDateTime expirationDate;
     private boolean archived;
+    
+    @Column(updatable = false)
+    @CreationTimestamp
     private LocalDateTime createdAt;
+    
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -90,6 +99,7 @@ public class BadgeClass {
     public void setImage(String image) { this.image = image; }
     public void setDescription(String description) { this.description = description; }
     public void setCriteriaText(String criteriaText) { this.criteriaText = criteriaText; }
+    public void setCriteriaUrl(String criteriaUrl) { this.criteriaUrl = criteriaUrl; }
     public void setFormal(boolean formal) { this.formal = formal; }
     public void setIsPrivate(boolean isPrivate) { this.isPrivate = isPrivate; }
     public void setNarrativeRequired(boolean narrativeRequired) { this.narrativeRequired = narrativeRequired; }
@@ -110,6 +120,7 @@ public class BadgeClass {
     public void setEqfNlqfLevelVerified(boolean eqfNlqfLevelVerified) { this.eqfNlqfLevelVerified = eqfNlqfLevelVerified; }
     public void setBadgeClassType(String badgeClassType) { this.badgeClassType = badgeClassType; }
     public void setExpirationPeriod(Duration expirationPeriod) { this.expirationPeriod = expirationPeriod; }
+    public void setExpirationDate(LocalDateTime expirationDate) { this.expirationDate = expirationDate; }
     public void setOrganization(Organization organization) { this.organization = organization; }
     public void setTags(Set<Tag> tags) { this.tags = tags; }
     public void setAlignments(List<Alignment> alignments) { this.alignments = alignments; }
@@ -121,6 +132,7 @@ public class BadgeClass {
     public String getImage() { return this.image; }
     public String getDescription() { return this.description; }
     public String getCriteriaText() { return this.criteriaText; }
+    public String getCriteriaUrl() { return this.criteriaUrl; }
     public boolean isFormal() { return this.formal; }
     public boolean isPrivate() { return this.isPrivate; }
     public boolean isNarrativeRequired() { return this.narrativeRequired; }
@@ -141,12 +153,16 @@ public class BadgeClass {
     public boolean isEqfNlqfLevelVerified() { return this.eqfNlqfLevelVerified; }
     public String getBadgeClassType() { return this.badgeClassType; }
     public Duration getExpirationPeriod() { return this.expirationPeriod; }
+    public LocalDateTime getExpirationDate() { return this.expirationDate; }
     public LocalDateTime getCreatedAt() { return this.createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return this.updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public Set<Tag> getTags() { return this.tags; }
     public List<Alignment> getAlignments() { return this.alignments; }
     public Set<Institution> getAwardAllowedInstitutions() { return this.awardAllowedInstitutions; }
     public String getExtensions() { return this.extensions; }
+    public List<BadgeInstance> getInstances() { return this.instances; }
 
     public Organization getOrganization() { return this.organization; }
 } 
