@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import com.taashee.badger.repositories.OrganizationStaffRepository;
+import com.taashee.badger.repositories.OrganizationUserRepository;
+import com.taashee.badger.repositories.BadgeInstanceRepository;
+import com.taashee.badger.repositories.BadgeClassRepository;
 
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
@@ -31,6 +34,12 @@ public class OrganizationServiceImpl implements OrganizationService {
     private EmailVerificationService emailVerificationService;
     @Autowired
     private OrganizationStaffRepository organizationStaffRepository;
+    @Autowired
+    private OrganizationUserRepository organizationUserRepository;
+    @Autowired
+    private BadgeInstanceRepository badgeInstanceRepository;
+    @Autowired
+    private BadgeClassRepository badgeClassRepository;
     @Value("${staff.default.password}")
     private String defaultStaffPassword;
 
@@ -132,8 +141,20 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
+    @Transactional
     public void bulkDeleteOrganizations(List<Long> ids) {
-        organizationRepository.deleteAllById(ids);
+        for (Long id : ids) {
+            // First delete organization users
+            organizationUserRepository.deleteByOrganizationId(id);
+            // Then delete organization staff
+            organizationStaffRepository.deleteByOrganizationId(id);
+            // Delete badge instances for this organization's badge classes
+            badgeInstanceRepository.deleteByBadgeClassOrganizationId(id);
+            // Delete badge classes for this organization
+            badgeClassRepository.deleteByOrganizationId(id);
+            // Finally delete the organization
+            organizationRepository.deleteById(id);
+        }
     }
 
     @Override

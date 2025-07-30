@@ -58,7 +58,7 @@ public class BadgeInstance {
     private List<Evidence> evidenceItems;
 
     public enum Status {
-        AWARDED, REVOKED
+        ACTIVE, REVOKED, EXPIRED
     }
 
     // Getters and setters (or use Lombok @Data)
@@ -124,4 +124,15 @@ public class BadgeInstance {
     public String getLearningOutcomes() { return this.learningOutcomes; }
     public List<Evidence> getEvidenceItems() { return this.evidenceItems; }
     public String getExtensions() { return this.extensions; }
+    
+    // Method to dynamically determine the current status
+    public Status getCurrentStatus() {
+        if (this.revoked) {
+            return Status.REVOKED;
+        }
+        if (this.expiresAt != null && this.expiresAt.isBefore(java.time.LocalDateTime.now())) {
+            return Status.EXPIRED;
+        }
+        return Status.ACTIVE;
+    }
 } 

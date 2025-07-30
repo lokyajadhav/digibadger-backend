@@ -42,7 +42,7 @@ public class BadgeInstanceController {
         dto.image = bi.getImage();
         dto.revoked = bi.isRevoked();
         dto.revocationReason = bi.getRevocationReason();
-        dto.expiresAt = bi.getExpiresAt();
+        dto.expiresAt = bi.getExpiresAt() != null ? bi.getExpiresAt().toString() : null;
         dto.acceptance = bi.getAcceptance();
         dto.narrative = bi.getNarrative();
         dto.hashed = bi.isHashed();
@@ -63,7 +63,7 @@ public class BadgeInstanceController {
         if (bi.getEvidenceItems() != null) {
             dto.evidenceItems = bi.getEvidenceItems().stream().map(e -> {
                 BadgeInstanceDTO.EvidenceDTO edto = new BadgeInstanceDTO.EvidenceDTO();
-                edto.evidenceUrl = e.getEvidenceUrl();
+                edto.url = e.getEvidenceUrl(); // Map evidenceUrl to url for frontend
                 edto.narrative = e.getNarrative();
                 edto.name = e.getName();
                 edto.description = e.getDescription();

@@ -19,5 +19,10 @@ public interface BadgeClassService {
     void bulkDeleteBadgeClasses(List<Long> ids);
     BadgeClass createBadgeClassFromDTO(BadgeClassDTO badgeClassDTO);
     BadgeClass updateBadgeClassFromDTO(Long id, BadgeClassDTO badgeClassDTO);
+    
+    // New methods for badge recipients and import/export
+    java.util.Map<String, Object> getBadgeRecipients(Long badgeClassId, int page, int size, String search, String status, String sortBy, String sortOrder, String startDate, String endDate);
+    java.util.Map<String, Object> exportBadgeClass(Long badgeClassId, boolean includeAssertions, boolean compressOutput);
+    BadgeClass importBadgeClass(Long badgeClassId, String badgeUrl, String badgeJson, String importType);
     // Add more methods as needed (e.g., archive, search, etc.)
 } 

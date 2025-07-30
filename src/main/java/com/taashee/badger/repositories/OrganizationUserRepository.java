@@ -2,6 +2,7 @@ package com.taashee.badger.repositories;
 
 import com.taashee.badger.models.OrganizationUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -23,4 +24,12 @@ public interface OrganizationUserRepository extends JpaRepository<OrganizationUs
     
     @Query("SELECT ou FROM OrganizationUser ou WHERE ou.user.email = :email")
     List<OrganizationUser> findByUserEmail(@Param("email") String email);
+    
+    @Modifying
+    @Query("DELETE FROM OrganizationUser ou WHERE ou.organization.id = :organizationId")
+    void deleteByOrganizationId(@Param("organizationId") Long organizationId);
+    
+    @Modifying
+    @Query("DELETE FROM OrganizationUser ou WHERE ou.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 } 

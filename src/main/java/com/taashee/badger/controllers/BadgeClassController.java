@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import com.taashee.badger.models.BadgeInstanceAwardRequest;
 import com.taashee.badger.models.BadgeInstance;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ public class BadgeClassController {
         dto.image = badgeClass.getImage();
         dto.description = badgeClass.getDescription();
         dto.criteriaText = badgeClass.getCriteriaText();
+        dto.criteriaUrl = badgeClass.getCriteriaUrl();
         dto.formal = badgeClass.isFormal();
         dto.isPrivate = badgeClass.isPrivate();
         dto.narrativeRequired = badgeClass.isNarrativeRequired();
@@ -53,10 +55,31 @@ public class BadgeClassController {
         dto.eqfNlqfLevelVerified = badgeClass.isEqfNlqfLevelVerified();
         dto.badgeClassType = badgeClass.getBadgeClassType();
         dto.expirationPeriod = badgeClass.getExpirationPeriod();
+        dto.expirationDate = badgeClass.getExpirationDate();
         dto.archived = badgeClass.getArchived();
         dto.createdAt = badgeClass.getCreatedAt();
         dto.updatedAt = badgeClass.getUpdatedAt();
         dto.organizationId = badgeClass.getOrganization() != null ? badgeClass.getOrganization().getId() : null;
+        
+        // Include full organization object
+        if (badgeClass.getOrganization() != null) {
+            BadgeClassResponseDTO.OrganizationDTO orgDto = new BadgeClassResponseDTO.OrganizationDTO();
+            orgDto.id = badgeClass.getOrganization().getId();
+            orgDto.nameEnglish = badgeClass.getOrganization().getNameEnglish();
+            orgDto.descriptionEnglish = badgeClass.getOrganization().getDescriptionEnglish();
+            orgDto.imageEnglish = badgeClass.getOrganization().getImageEnglish();
+            orgDto.urlEnglish = badgeClass.getOrganization().getUrlEnglish();
+            orgDto.email = badgeClass.getOrganization().getEmail();
+            orgDto.faculty = badgeClass.getOrganization().getFaculty();
+            orgDto.institutionName = badgeClass.getOrganization().getInstitutionName();
+            orgDto.institutionIdentifier = badgeClass.getOrganization().getInstitutionIdentifier();
+            orgDto.gradingTableUrl = badgeClass.getOrganization().getGradingTableUrl();
+            orgDto.archived = badgeClass.getOrganization().getArchived();
+            orgDto.createdAt = badgeClass.getOrganization().getCreatedAt();
+            orgDto.updatedAt = badgeClass.getOrganization().getUpdatedAt();
+            dto.organization = orgDto;
+        }
+        
         // tags
         dto.tagNames = badgeClass.getTags() != null ? badgeClass.getTags().stream().map(tag -> tag.getName()).toList() : null;
         // alignments
@@ -77,6 +100,11 @@ public class BadgeClassController {
         } catch (Exception e) {
             dto.extensions = null;
         }
+        // Count active awards (non-revoked instances)
+        dto.activeAwardsCount = badgeClass.getInstances() != null ? 
+            badgeClass.getInstances().stream()
+                .filter(instance -> !instance.isRevoked())
+                .count() : 0L;
         return dto;
     }
 
@@ -95,6 +123,44 @@ public class BadgeClassController {
         List<BadgeClass> badgeClasses = badgeClassService.getAllBadgeClasses();
         List<BadgeClassResponseDTO> dtos = badgeClasses.stream().map(this::toResponseDTO).toList();
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", dtos, null));
+    }
+
+    @Operation(summary = "Get paginated badge classes", description = "Get a paginated list of badge classes with search and filtering.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
+    @GetMapping("/paginated")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPaginatedBadgeClasses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String search) {
+        
+        List<BadgeClass> allBadgeClasses = badgeClassService.getAllBadgeClasses();
+        
+        // Apply search filter if provided
+        if (search != null && !search.trim().isEmpty()) {
+            allBadgeClasses = allBadgeClasses.stream()
+                .filter(bc -> bc.getName() != null && bc.getName().toLowerCase().contains(search.toLowerCase()))
+                .toList();
+        }
+        
+        // Calculate pagination
+        int total = allBadgeClasses.size();
+        int totalPages = (int) Math.ceil((double) total / size);
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, total);
+        
+        List<BadgeClass> paginatedBadgeClasses = allBadgeClasses.subList(startIndex, endIndex);
+        List<BadgeClassResponseDTO> dtos = paginatedBadgeClasses.stream().map(this::toResponseDTO).toList();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", dtos);
+        response.put("totalElements", total);
+        response.put("totalPages", totalPages);
+        response.put("currentPage", page);
+        response.put("size", size);
+        response.put("first", page == 0);
+        response.put("last", page >= totalPages - 1);
+        
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", response, null));
     }
 
     @Operation(summary = "Get badge class by ID", description = "Get badge class details by ID.")
@@ -120,6 +186,64 @@ public class BadgeClassController {
     public ResponseEntity<ApiResponse<Void>> deleteBadgeClass(@PathVariable Long id) {
         badgeClassService.deleteBadgeClass(id);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge class deleted", null, null));
+    }
+
+    @Operation(summary = "Get badge recipients", description = "Get paginated list of badge recipients with filtering and sorting.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
+    @GetMapping("/{id}/recipients")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getBadgeRecipients(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        try {
+            Map<String, Object> result = badgeClassService.getBadgeRecipients(id, page, size, search, status, sortBy, sortOrder, startDate, endDate);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge recipients retrieved", result, null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error retrieving badge recipients", null, e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Export badge class", description = "Export badge class as JSON with optional assertions.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
+    @GetMapping("/{id}/export")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> exportBadgeClass(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean includeAssertions,
+            @RequestParam(defaultValue = "false") boolean compressOutput) {
+        
+        try {
+            Map<String, Object> result = badgeClassService.exportBadgeClass(id, includeAssertions, compressOutput);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge class exported", result, null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error exporting badge class", null, e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Import badge class", description = "Import badge class from URL, JSON, or file.")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
+    @PostMapping("/{id}/import")
+    public ResponseEntity<ApiResponse<BadgeClassResponseDTO>> importBadgeClass(
+            @PathVariable Long id,
+            @RequestParam(required = false) String badgeUrl,
+            @RequestParam(required = false) String badgeJson,
+            @RequestParam(required = false) String importType) {
+        
+        try {
+            BadgeClass updated = badgeClassService.importBadgeClass(id, badgeUrl, badgeJson, importType);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge class imported", toResponseDTO(updated), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error importing badge class", null, e.getMessage()));
+        }
     }
 
     @Operation(summary = "Archive or unarchive badge class", description = "ADMIN/ORGANIZATION only: Archive or unarchive a badge class. Author: Lokya Naik")
