@@ -139,6 +139,16 @@ public class UserInvitationController {
         return ResponseEntity.ok(new ApiResponse<>(200, "Invitation accepted, user created. Credentials sent to email.", null, null));
     }
 
+    @Operation(summary = "Get invitation by token", description = "Fetches a user invitation by its token.")
+    @GetMapping("/invitations/token/{token}")
+    public ResponseEntity<ApiResponse<UserInvitation>> getInvitationByToken(@PathVariable String token) {
+        Optional<UserInvitation> invitationOpt = invitationRepository.findByToken(token);
+        if (invitationOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(new ApiResponse<>(404, "Invitation not found", null, null));
+        }
+        return ResponseEntity.ok(new ApiResponse<>(200, "Invitation found", invitationOpt.get(), null));
+    }
+
     @Operation(summary = "Bulk import users", description = "ADMIN only: Bulk invite users by Excel upload. Author: Lokya Naik")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/users/import")

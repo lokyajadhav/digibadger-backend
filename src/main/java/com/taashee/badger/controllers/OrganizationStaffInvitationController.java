@@ -56,7 +56,6 @@ public class OrganizationStaffInvitationController {
         return ResponseEntity.ok(invitationService.createInvitation(invitation));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @Operation(summary = "Get invitation by token", description = "Fetches an invitation by its token.")
     @GetMapping("/token/{token}")
     public ResponseEntity<OrganizationStaffInvitation> getByToken(@PathVariable String token) {
@@ -73,7 +72,6 @@ public class OrganizationStaffInvitationController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @Operation(summary = "Accept invitation", description = "Accepts a staff invitation by token.")
     @PostMapping("/accept/{token}")
     public ResponseEntity<OrganizationStaffInvitationDTO> acceptInvitation(@PathVariable String token) {
@@ -81,7 +79,6 @@ public class OrganizationStaffInvitationController {
         return ResponseEntity.ok(new OrganizationStaffInvitationDTO(invitation));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @Operation(summary = "Reject invitation", description = "Rejects (expires) a staff invitation by token.")
     @PostMapping("/reject/{token}")
     public ResponseEntity<OrganizationStaffInvitationDTO> rejectInvitation(@PathVariable String token) {

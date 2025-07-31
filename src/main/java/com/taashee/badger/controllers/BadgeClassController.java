@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 import com.taashee.badger.models.BadgeClassDTO;
 import com.taashee.badger.models.BadgeClassResponseDTO;
 import com.taashee.badger.models.Institution;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Optional;
 
 @Tag(name = "Badge Class Management", description = "APIs for managing badge classes. Author: Lokya Naik")
 @RestController
@@ -246,14 +248,115 @@ public class BadgeClassController {
         }
     }
 
-    @Operation(summary = "Archive or unarchive badge class", description = "ADMIN/ORGANIZATION only: Archive or unarchive a badge class. Author: Lokya Naik")
-    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
+    @Operation(summary = "Toggle badge class privacy", description = "ISSUER only: Toggle badge class between public and private. Only badge class owners can perform this action.")
+    @PreAuthorize("hasRole('ISSUER')")
+    @PutMapping("/{id}/toggle-privacy")
+    public ResponseEntity<ApiResponse<BadgeClassResponseDTO>> toggleBadgeClassPrivacy(@PathVariable Long id) {
+        try {
+            BadgeClass updatedBadgeClass = badgeClassService.togglePrivacy(id);
+            BadgeClassResponseDTO responseDTO = toResponseDTO(updatedBadgeClass);
+            
+            String message = updatedBadgeClass.isPrivate() ? 
+                "Badge class has been made private" : 
+                "Badge class has been made public";
+                
+            return ResponseEntity.ok(new ApiResponse<>(
+                HttpStatus.OK.value(), 
+                message, 
+                responseDTO, 
+                null
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+                    "Failed to toggle badge class privacy", 
+                    null, 
+                    e.getMessage()
+                ));
+        }
+    }
+
+    @Operation(summary = "Archive or unarchive badge class", description = "ISSUER only: Archive or unarchive a badge class. Only badge class owners can perform this action. Author: Lokya Naik")
+    @PreAuthorize("hasRole('ISSUER')")
     @PutMapping("/{id}/archive")
-    public ResponseEntity<ApiResponse<BadgeClass>> archiveBadgeClass(@PathVariable Long id, @RequestBody Map<String, Boolean> archiveRequest) {
-        boolean archive = archiveRequest.getOrDefault("archive", true);
-        BadgeClass updated = badgeClassService.archiveBadgeClass(id, archive);
-        String msg = archive ? "Badge class archived" : "Badge class unarchived";
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), msg, updated, null));
+    public ResponseEntity<ApiResponse<BadgeClassResponseDTO>> archiveBadgeClass(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> archiveRequest) {
+        try {
+            // Debug logging
+            System.out.println("Archive request received for badge class ID: " + id);
+            System.out.println("Archive request body: " + archiveRequest);
+            
+            Boolean archive = null;
+            
+            if (archiveRequest != null) {
+                Object archiveObj = archiveRequest.get("archive");
+                if (archiveObj instanceof Boolean) {
+                    archive = (Boolean) archiveObj;
+                } else if (archiveObj instanceof String) {
+                    archive = Boolean.parseBoolean((String) archiveObj);
+                } else if (archiveObj != null) {
+                    archive = Boolean.valueOf(archiveObj.toString());
+                }
+            }
+            
+            System.out.println("Archive parameter value: " + archive);
+            
+            if (archive == null) {
+                System.out.println("Archive parameter is null - returning 400");
+                return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(
+                        HttpStatus.BAD_REQUEST.value(), 
+                        "Archive parameter is required", 
+                        null, 
+                        "Missing or invalid 'archive' parameter in request body. Expected: {\"archive\": true} or {\"archive\": false}"
+                    ));
+            }
+            
+            System.out.println("Calling badgeClassService.archiveBadgeClass with archive=" + archive);
+            BadgeClass updatedBadgeClass = badgeClassService.archiveBadgeClass(id, archive);
+            BadgeClassResponseDTO responseDTO = toResponseDTO(updatedBadgeClass);
+            
+            String message = archive ? 
+                "Badge class has been archived successfully" : 
+                "Badge class has been unarchived successfully";
+            
+            System.out.println("Archive operation successful: " + message);
+                
+            return ResponseEntity.ok(new ApiResponse<>(
+                HttpStatus.OK.value(), 
+                message, 
+                responseDTO, 
+                null
+            ));
+        } catch (IllegalStateException e) {
+            System.out.println("IllegalStateException caught: " + e.getMessage());
+            String userMessage;
+            if (e.getMessage().contains("active (non-revoked) badge instances")) {
+                userMessage = "Cannot archive this badge class because it has active badge instances. Please revoke all awarded badges first before archiving.";
+            } else if (e.getMessage().contains("don't have permission")) {
+                userMessage = "You don't have permission to modify this badge class. Only badge class owners can archive badges.";
+            } else {
+                userMessage = e.getMessage();
+            }
+            
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST.value(), 
+                    "Cannot archive badge class", 
+                    null, 
+                    userMessage
+                ));
+        } catch (Exception e) {
+            System.out.println("Exception caught: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+                    "Failed to archive/unarchive badge class", 
+                    null, 
+                    e.getMessage()
+                ));
+        }
     }
 
     @Operation(summary = "Award badges to multiple recipients", description = "ADMIN/ORGANIZATION only: Award badges in batch to recipients. Author: Lokya Naik")
@@ -281,5 +384,62 @@ public class BadgeClassController {
     public ResponseEntity<ApiResponse<Void>> bulkDeleteBadgeClasses(@RequestBody List<Long> ids) {
         badgeClassService.bulkDeleteBadgeClasses(ids);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge classes deleted", null, null));
+    }
+
+    @Operation(summary = "Debug badge class details", description = "Debug endpoint to check badge class details and permissions")
+    @PreAuthorize("hasRole('ISSUER')")
+    @GetMapping("/{id}/debug")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> debugBadgeClass(@PathVariable Long id) {
+        try {
+            Map<String, Object> debugInfo = new HashMap<>();
+            
+            // Check if badge class exists
+            Optional<BadgeClass> badgeClassOpt = badgeClassService.getBadgeClassById(id);
+            if (badgeClassOpt.isEmpty()) {
+                debugInfo.put("error", "Badge class not found");
+                return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK.value(), 
+                    "Debug info", 
+                    debugInfo, 
+                    null
+                ));
+            }
+            
+            BadgeClass badgeClass = badgeClassOpt.get();
+            debugInfo.put("badgeClassId", badgeClass.getId());
+            debugInfo.put("badgeClassName", badgeClass.getName());
+            debugInfo.put("organizationId", badgeClass.getOrganization() != null ? badgeClass.getOrganization().getId() : null);
+            debugInfo.put("isArchived", badgeClass.getArchived());
+            debugInfo.put("isPrivate", badgeClass.isPrivate());
+            
+            // Get current user info
+            String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .map(a -> a.getAuthority())
+                .toList();
+            
+            debugInfo.put("userEmail", email);
+            debugInfo.put("userRoles", roles);
+            
+            // Check active badge instances
+            List<BadgeInstance> activeInstances = badgeClassService.getActiveBadgeInstances(id);
+            debugInfo.put("activeBadgeInstances", activeInstances.size());
+            debugInfo.put("canArchive", activeInstances.isEmpty());
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                HttpStatus.OK.value(), 
+                "Debug info", 
+                debugInfo, 
+                null
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+                    "Debug failed", 
+                    null, 
+                    e.getMessage()
+                ));
+        }
     }
 } 
