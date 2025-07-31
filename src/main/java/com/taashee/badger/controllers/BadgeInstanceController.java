@@ -15,10 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
 
 @Tag(name = "Badge Instance Management", description = "APIs for managing badge instances. Author: Lokya Naik")
 @RestController
-@RequestMapping("/api/badgeinstances")
+@RequestMapping("/api/badge-instances")
 public class BadgeInstanceController {
     @Autowired
     private BadgeInstanceService badgeInstanceService;
@@ -100,9 +101,34 @@ public class BadgeInstanceController {
     @PreAuthorize("hasAnyRole('ADMIN','ORGANIZATION')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BadgeInstanceDTO>> getBadgeInstanceById(@PathVariable Long id) {
-        return badgeInstanceService.getBadgeInstanceById(id)
-            .map(bi -> ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", toResponseDTO(bi), null)))
-            .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Badge instance not found", null, "Badge instance not found")));
+        Optional<BadgeInstance> badgeInstance = badgeInstanceService.getBadgeInstanceById(id);
+        if (badgeInstance.isPresent()) {
+            BadgeInstanceDTO responseDTO = toResponseDTO(badgeInstance.get());
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", responseDTO, null));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Operation(summary = "Get user badges", description = "Get badges for the current user.")
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/user")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserBadges(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+        try {
+            Map<String, Object> result = badgeInstanceService.getUserBadges(page, size, search);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Success", result, null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+                    "Failed to fetch user badges", 
+                    null, 
+                    e.getMessage()
+                ));
+        }
     }
 
     @Operation(summary = "Update badge instance", description = "ADMIN/ORGANIZATION only: Update a badge instance.")
@@ -148,6 +174,44 @@ public class BadgeInstanceController {
     public ResponseEntity<ApiResponse<Void>> bulkDeleteBadgeInstances(@RequestBody List<Long> ids) {
         badgeInstanceService.bulkDeleteBadgeInstances(ids);
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Badge instances deleted", null, null));
+    }
+
+    @Operation(summary = "Revoke badge instance", description = "ISSUER only: Revoke a single badge instance. Only badge class owners can perform this action.")
+    @PreAuthorize("hasRole('ISSUER')")
+    @PutMapping("/{id}/revoke")
+    public ResponseEntity<ApiResponse<BadgeInstanceDTO>> revokeBadgeInstance(@PathVariable Long id, @RequestBody(required = false) Map<String, String> revokeRequest) {
+        try {
+            String reason = null;
+            if (revokeRequest != null && revokeRequest.containsKey("reason")) {
+                reason = revokeRequest.get("reason");
+            }
+            
+            BadgeInstance revokedInstance = badgeInstanceService.revokeBadgeInstance(id, reason);
+            BadgeInstanceDTO responseDTO = toResponseDTO(revokedInstance);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                HttpStatus.OK.value(), 
+                "Badge instance has been revoked successfully", 
+                responseDTO, 
+                null
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST.value(), 
+                    "Cannot revoke badge instance", 
+                    null, 
+                    e.getMessage()
+                ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+                    "Failed to revoke badge instance", 
+                    null, 
+                    e.getMessage()
+                ));
+        }
     }
 
     @Operation(summary = "Revoke badge instances", description = "ADMIN/ORGANIZATION only: Revoke badge instances in bulk. Author: Lokya Naik")

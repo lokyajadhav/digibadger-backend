@@ -24,5 +24,9 @@ public interface BadgeClassService {
     java.util.Map<String, Object> getBadgeRecipients(Long badgeClassId, int page, int size, String search, String status, String sortBy, String sortOrder, String startDate, String endDate);
     java.util.Map<String, Object> exportBadgeClass(Long badgeClassId, boolean includeAssertions, boolean compressOutput);
     BadgeClass importBadgeClass(Long badgeClassId, String badgeUrl, String badgeJson, String importType);
+    
+    // Privacy and archive management
+    BadgeClass togglePrivacy(Long badgeClassId);
+    List<BadgeInstance> getActiveBadgeInstances(Long badgeClassId);
     // Add more methods as needed (e.g., archive, search, etc.)
 } 

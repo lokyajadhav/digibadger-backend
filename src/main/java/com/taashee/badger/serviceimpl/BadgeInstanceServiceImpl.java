@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 import com.taashee.badger.exceptions.ApiException;
+import java.util.Map;
 
 @Service
 public class BadgeInstanceServiceImpl implements BadgeInstanceService {
@@ -140,12 +141,150 @@ public class BadgeInstanceServiceImpl implements BadgeInstanceService {
 
     @Override
     public List<BadgeInstance> revokeBadgeInstances(List<Long> ids, String revocationReason) {
-        List<BadgeInstance> instances = badgeInstanceRepository.findAllById(ids);
-        for (BadgeInstance instance : instances) {
-            instance.setRevoked(true);
-            instance.setRevocationReason(revocationReason);
+        List<BadgeInstance> badgeInstances = badgeInstanceRepository.findAllById(ids);
+        for (BadgeInstance bi : badgeInstances) {
+            bi.setRevoked(true);
+            bi.setRevocationReason(revocationReason);
         }
-        return badgeInstanceRepository.saveAll(instances);
+        return badgeInstanceRepository.saveAll(badgeInstances);
+    }
+
+    @Override
+    public BadgeInstance revokeBadgeInstance(Long id, String revocationReason) {
+        BadgeInstance badgeInstance = badgeInstanceRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Badge instance not found"));
+        
+        // Check if user has permission to revoke this badge instance
+        if (!hasPermissionToModifyBadgeInstance(badgeInstance)) {
+            throw new IllegalStateException("You don't have permission to modify this badge instance");
+        }
+        
+        // Check if badge instance is already revoked
+        if (badgeInstance.isRevoked()) {
+            throw new IllegalStateException("Badge instance is already revoked");
+        }
+        
+        // Revoke the badge instance
+        badgeInstance.setRevoked(true);
+        badgeInstance.setRevocationReason(revocationReason);
+        
+        return badgeInstanceRepository.save(badgeInstance);
+    }
+
+    @Override
+    public Map<String, Object> getUserBadges(int page, int size, String search) {
+        // Get current user
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Get all badge instances for this user
+        List<BadgeInstance> allInstances = badgeInstanceRepository.findByRecipientId(user.getId());
+        
+        // Apply search filter
+        List<BadgeInstance> filteredInstances = allInstances.stream()
+            .filter(instance -> {
+                if (search != null && !search.trim().isEmpty()) {
+                    String searchLower = search.toLowerCase();
+                    String badgeName = instance.getBadgeClass() != null ? 
+                        instance.getBadgeClass().getName().toLowerCase() : "";
+                    String orgName = instance.getOrganization() != null ? 
+                        instance.getOrganization().getNameEnglish().toLowerCase() : "";
+                    return badgeName.contains(searchLower) || orgName.contains(searchLower);
+                }
+                return true;
+            })
+            .collect(java.util.stream.Collectors.toList());
+        
+        // Apply pagination
+        int total = filteredInstances.size();
+        int totalPages = (int) Math.ceil((double) total / size);
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, total);
+        
+        List<BadgeInstance> paginatedInstances = filteredInstances.subList(startIndex, endIndex);
+        
+        // Convert to DTOs
+        List<Map<String, Object>> badges = paginatedInstances.stream()
+            .map(instance -> {
+                Map<String, Object> badgeData = new java.util.HashMap<>();
+                badgeData.put("id", instance.getId());
+                badgeData.put("badgeClassName", instance.getBadgeClass() != null ? 
+                    instance.getBadgeClass().getName() : "Unknown Badge");
+                badgeData.put("description", instance.getBadgeClass() != null ? 
+                    instance.getBadgeClass().getDescription() : null);
+                badgeData.put("image", instance.getBadgeClass() != null ? 
+                    instance.getBadgeClass().getImage() : null);
+                badgeData.put("organizationName", instance.getOrganization() != null ? 
+                    instance.getOrganization().getNameEnglish() : "Unknown Organization");
+                badgeData.put("issuedOn", instance.getIssuedOn());
+                badgeData.put("status", instance.getCurrentStatus());
+                badgeData.put("revoked", instance.isRevoked());
+                badgeData.put("expiresAt", instance.getExpiresAt());
+                badgeData.put("narrative", instance.getNarrative());
+                badgeData.put("evidenceItems", instance.getEvidenceItems() != null ? 
+                    instance.getEvidenceItems().stream().map(e -> {
+                        Map<String, Object> evidence = new java.util.HashMap<>();
+                        evidence.put("narrative", e.getNarrative());
+                        evidence.put("url", e.getEvidenceUrl());
+                        evidence.put("name", e.getName());
+                        evidence.put("description", e.getDescription());
+                        return evidence;
+                    }).toList() : null);
+                return badgeData;
+            })
+            .collect(java.util.stream.Collectors.toList());
+        
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("content", badges);
+        result.put("totalElements", total);
+        result.put("totalPages", totalPages);
+        result.put("currentPage", page);
+        result.put("size", size);
+        result.put("first", page == 0);
+        result.put("last", page >= totalPages - 1);
+        
+        return result;
+    }
+
+    /**
+     * Check if the current user has permission to modify the badge instance
+     * Only badge class owners (ISSUER with OWNER permission) can modify
+     */
+    private boolean hasPermissionToModifyBadgeInstance(BadgeInstance badgeInstance) {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .map(a -> a.getAuthority())
+            .toList();
+        
+        // Only ISSUER role can modify badge instances
+        if (!roles.contains("ROLE_ISSUER")) {
+            return false;
+        }
+        
+        // Check if user belongs to the badge instance organization and has OWNER permission
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || badgeInstance.getOrganization() == null) {
+            return false;
+        }
+        
+        Optional<com.taashee.badger.models.OrganizationStaff> staffOptional = organizationStaffRepository
+            .findByOrganizationIdAndUserId(badgeInstance.getOrganization().getId(), user.getId());
+        
+        if (!staffOptional.isPresent()) {
+            return false;
+        }
+        
+        com.taashee.badger.models.OrganizationStaff staff = staffOptional.get();
+        String staffRole = staff.getStaffRole();
+        
+        // Check if staff role indicates owner-like permissions
+        return staffRole != null && (
+            staffRole.equalsIgnoreCase("OWNER") || 
+            staffRole.equalsIgnoreCase("owner") ||
+            staffRole.equalsIgnoreCase("ADMIN") ||
+            staffRole.equalsIgnoreCase("admin")
+        );
     }
 
     @Override

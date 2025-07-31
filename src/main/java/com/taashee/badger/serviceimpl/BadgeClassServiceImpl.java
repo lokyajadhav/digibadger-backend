@@ -130,9 +130,103 @@ public class BadgeClassServiceImpl implements BadgeClassService {
     @Override
     public BadgeClass archiveBadgeClass(Long id, boolean archive) {
         BadgeClass badgeClass = badgeClassRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("BadgeClass not found"));
+            .orElseThrow(() -> new RuntimeException("Badge class not found"));
+        
+        // Check if user has permission to archive this badge class
+        if (!hasPermissionToModifyBadgeClass(badgeClass)) {
+            throw new IllegalStateException("You don't have permission to modify this badge class");
+        }
+        
+        // If trying to archive, check if it can be archived
+        if (archive && !canArchiveBadgeClass(badgeClass)) {
+            throw new IllegalStateException("Cannot archive badge class: There are active (non-revoked) badge instances. Please revoke all instances first.");
+        }
+        
         badgeClass.setArchived(archive);
         return badgeClassRepository.save(badgeClass);
+    }
+
+    @Override
+    public BadgeClass togglePrivacy(Long badgeClassId) {
+        BadgeClass badgeClass = badgeClassRepository.findById(badgeClassId)
+            .orElseThrow(() -> new RuntimeException("Badge class not found"));
+        
+        // Check if user has permission to modify this badge class
+        if (!hasPermissionToModifyBadgeClass(badgeClass)) {
+            throw new IllegalStateException("You don't have permission to modify this badge class");
+        }
+        
+        // Toggle the privacy status
+        badgeClass.setIsPrivate(!badgeClass.isPrivate());
+        return badgeClassRepository.save(badgeClass);
+    }
+
+    /**
+     * Check if the current user has permission to modify the badge class
+     * Only badge class owners (ISSUER with OWNER permission) can modify
+     */
+    private boolean hasPermissionToModifyBadgeClass(BadgeClass badgeClass) {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .map(a -> a.getAuthority())
+            .toList();
+        
+        logger.info("[hasPermissionToModifyBadgeClass] Checking permissions for user: {} with roles: {}", email, roles);
+        
+        // Only ISSUER role can modify badge classes
+        if (!roles.contains("ROLE_ISSUER")) {
+            logger.warn("[hasPermissionToModifyBadgeClass] User {} does not have ROLE_ISSUER", email);
+            return false;
+        }
+        
+        // Check if user belongs to the badge class organization and has OWNER permission
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || badgeClass.getOrganization() == null) {
+            logger.warn("[hasPermissionToModifyBadgeClass] User {} not found or badge class has no organization", email);
+            return false;
+        }
+        
+        logger.info("[hasPermissionToModifyBadgeClass] Checking organization staff for user: {} in organization: {}", 
+                   user.getId(), badgeClass.getOrganization().getId());
+        
+        // Get staff record for this user in this organization
+        Optional<com.taashee.badger.models.OrganizationStaff> staffOptional = organizationStaffRepository
+            .findByOrganizationIdAndUserId(badgeClass.getOrganization().getId(), user.getId());
+        
+        if (!staffOptional.isPresent()) {
+            logger.warn("[hasPermissionToModifyBadgeClass] No staff record found for user {} in organization {}", 
+                       user.getId(), badgeClass.getOrganization().getId());
+            return false;
+        }
+        
+        com.taashee.badger.models.OrganizationStaff staff = staffOptional.get();
+        String staffRole = staff.getStaffRole();
+        logger.info("[hasPermissionToModifyBadgeClass] Staff role: {}", staffRole);
+        
+        // Check if staff role indicates owner-like permissions
+        boolean hasOwnerPermission = staffRole != null && (
+            staffRole.equalsIgnoreCase("OWNER") || 
+            staffRole.equalsIgnoreCase("owner") ||
+            staffRole.equalsIgnoreCase("ADMIN") ||
+            staffRole.equalsIgnoreCase("admin")
+        );
+        
+        logger.info("[hasPermissionToModifyBadgeClass] User {} has owner permission: {}", email, hasOwnerPermission);
+        return hasOwnerPermission;
+    }
+
+    /**
+     * Check if a badge class can be archived
+     * Can only be archived if there are no active (non-revoked) badge instances
+     */
+    private boolean canArchiveBadgeClass(BadgeClass badgeClass) {
+        List<BadgeInstance> activeInstances = badgeInstanceRepository.findByBadgeClassIdAndRevokedFalse(badgeClass.getId());
+        return activeInstances.isEmpty();
+    }
+
+    @Override
+    public List<BadgeInstance> getActiveBadgeInstances(Long badgeClassId) {
+        return badgeInstanceRepository.findByBadgeClassIdAndRevokedFalse(badgeClassId);
     }
 
     @Override

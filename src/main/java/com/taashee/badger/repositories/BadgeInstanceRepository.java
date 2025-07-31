@@ -24,4 +24,6 @@ public interface BadgeInstanceRepository extends JpaRepository<BadgeInstance, Lo
     @Modifying
     @Query("DELETE FROM BadgeInstance bi WHERE bi.recipient.id = :recipientId")
     void deleteByRecipientId(@Param("recipientId") Long recipientId);
+    
+    List<BadgeInstance> findByBadgeClassIdAndRevokedFalse(Long badgeClassId);
 } 
