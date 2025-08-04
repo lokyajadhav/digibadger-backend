@@ -86,22 +86,7 @@ public class UserManagementController {
         return ResponseEntity.ok(new com.taashee.badger.models.ApiResponse<>(HttpStatus.OK.value(), "User deleted", null, null));
     }
 
-    @Operation(summary = "Check if email exists with ORGANIZATION role", description = "Checks if a user exists with the ORGANIZATION role for organization creation. Returns a clear message for UI feedback. Author: Lokya Naik")
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/check-organization-email")
-    public ResponseEntity<com.taashee.badger.models.ApiResponse<Void>> checkOrganizationEmail(@RequestParam String email) {
-        User user = userService.findByEmail(email);
-        if (user == null) {
-            return ResponseEntity.ok(new com.taashee.badger.models.ApiResponse<>(200, "This email is not registered in Badger.", null, null));
-        }
-        if (user.getRoles() != null && user.getRoles().contains("ORGANIZATION")) {
-            return ResponseEntity.ok(new com.taashee.badger.models.ApiResponse<>(200, "Eligible: This email is registered as an ORGANIZATION.", null, null));
-        } else {
-            return ResponseEntity.ok(new com.taashee.badger.models.ApiResponse<>(200, "This email exists but does not have the ORGANIZATION role. Please request the role.", null, null));
-        }
-    }
-
-    @Operation(summary = "Check if email exists with ISSUER role", description = "Checks if a user exists with the ISSUER role for issuer creation. Returns a clear message for UI feedback. Author: Lokya Naik")
+    @Operation(summary = "Check if email exists with ISSUER role", description = "Checks if a user exists with the ISSUER role for organization creation. Returns a clear message for UI feedback. Author: Lokya Naik")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/check-issuer-email")
     public ResponseEntity<com.taashee.badger.models.ApiResponse<Void>> checkIssuerEmail(@RequestParam String email) {

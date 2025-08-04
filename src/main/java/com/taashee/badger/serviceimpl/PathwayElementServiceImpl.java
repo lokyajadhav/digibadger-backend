@@ -1,7 +1,16 @@
 package com.taashee.badger.serviceimpl;
 
-import com.taashee.badger.models.*;
-import com.taashee.badger.repositories.*;
+import com.taashee.badger.models.PathwayElement;
+import com.taashee.badger.models.PathwayElementDTO;
+import com.taashee.badger.models.Pathway;
+import com.taashee.badger.models.User;
+import com.taashee.badger.models.Organization;
+import com.taashee.badger.models.OrganizationStaff;
+import com.taashee.badger.repositories.PathwayElementRepository;
+import com.taashee.badger.repositories.PathwayRepository;
+import com.taashee.badger.repositories.UserRepository;
+import com.taashee.badger.repositories.OrganizationStaffRepository;
+
 import com.taashee.badger.services.PathwayElementService;
 import com.taashee.badger.exceptions.ResourceNotFoundException;
 import com.taashee.badger.exceptions.UnauthorizedException;
@@ -25,7 +34,10 @@ public class PathwayElementServiceImpl implements PathwayElementService {
     private PathwayRepository pathwayRepository;
 
     @Autowired
-    private BadgeClassRepository badgeClassRepository;
+    private OrganizationStaffRepository organizationStaffRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public PathwayElementDTO createPathwayElement(PathwayElementDTO elementDTO, Long pathwayId, Long organizationId) {
@@ -45,14 +57,22 @@ public class PathwayElementServiceImpl implements PathwayElementService {
         element.setPathway(pathway);
         element.setName(elementDTO.getName());
         element.setDescription(elementDTO.getDescription());
-        element.setElementType(elementDTO.getElementType());
+        element.setElementType(elementDTO.getElementType() != null ? 
+            PathwayElement.ElementType.valueOf(elementDTO.getElementType().toUpperCase()) : 
+            PathwayElement.ElementType.ELEMENT);
         element.setOrderIndex(nextOrderIndex);
+        element.setCompletionRule(elementDTO.getCompletionRule() != null ? 
+            PathwayElement.CompletionRule.valueOf(elementDTO.getCompletionRule().toUpperCase()) : 
+            PathwayElement.CompletionRule.ALL);
+        element.setRequiredCount(elementDTO.getRequiredCount() != null ? elementDTO.getRequiredCount() : 1);
+        element.setIsOptional(elementDTO.getIsOptional() != null ? elementDTO.getIsOptional() : false);
+        element.setCountsTowardsParent(elementDTO.getCountsTowardsParent() != null ? elementDTO.getCountsTowardsParent() : true);
 
-        // Set badge class if provided
-        if (elementDTO.getBadgeClassId() != null) {
-            BadgeClass badgeClass = badgeClassRepository.findById(elementDTO.getBadgeClassId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Badge class not found"));
-            element.setBadgeClass(badgeClass);
+        // Set parent element if provided
+        if (elementDTO.getParentElementId() != null) {
+            PathwayElement parentElement = pathwayElementRepository.findById(elementDTO.getParentElementId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent element not found"));
+            element.setParentElement(parentElement);
         }
 
         PathwayElement savedElement = pathwayElementRepository.save(element);
@@ -106,15 +126,23 @@ public class PathwayElementServiceImpl implements PathwayElementService {
         // Update element fields
         element.setName(elementDTO.getName());
         element.setDescription(elementDTO.getDescription());
-        element.setElementType(elementDTO.getElementType());
+        element.setElementType(elementDTO.getElementType() != null ? 
+            PathwayElement.ElementType.valueOf(elementDTO.getElementType().toUpperCase()) : 
+            PathwayElement.ElementType.ELEMENT);
+        element.setCompletionRule(elementDTO.getCompletionRule() != null ? 
+            PathwayElement.CompletionRule.valueOf(elementDTO.getCompletionRule().toUpperCase()) : 
+            PathwayElement.CompletionRule.ALL);
+        element.setRequiredCount(elementDTO.getRequiredCount() != null ? elementDTO.getRequiredCount() : 1);
+        element.setIsOptional(elementDTO.getIsOptional() != null ? elementDTO.getIsOptional() : false);
+        element.setCountsTowardsParent(elementDTO.getCountsTowardsParent() != null ? elementDTO.getCountsTowardsParent() : true);
 
-        // Update badge class if provided
-        if (elementDTO.getBadgeClassId() != null) {
-            BadgeClass badgeClass = badgeClassRepository.findById(elementDTO.getBadgeClassId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Badge class not found"));
-            element.setBadgeClass(badgeClass);
+        // Update parent element if provided
+        if (elementDTO.getParentElementId() != null) {
+            PathwayElement parentElement = pathwayElementRepository.findById(elementDTO.getParentElementId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent element not found"));
+            element.setParentElement(parentElement);
         } else {
-            element.setBadgeClass(null);
+            element.setParentElement(null);
         }
 
         PathwayElement updatedElement = pathwayElementRepository.save(element);
@@ -137,16 +165,14 @@ public class PathwayElementServiceImpl implements PathwayElementService {
 
     @Override
     public void addBadgeRequirement(Long elementId, Long badgeClassId, Long pathwayId, Long organizationId) {
-        // This would be implemented when we add badge requirements to pathway elements
-        // For now, this is a placeholder
-        throw new UnsupportedOperationException("Badge requirements not yet implemented");
+        // This method is deprecated - use PathwayElementBadgeService instead
+        throw new UnsupportedOperationException("Use PathwayElementBadgeService.addBadgeToElement() instead");
     }
 
     @Override
     public void removeBadgeRequirement(Long elementId, Long badgeClassId, Long pathwayId, Long organizationId) {
-        // This would be implemented when we add badge requirements to pathway elements
-        // For now, this is a placeholder
-        throw new UnsupportedOperationException("Badge requirements not yet implemented");
+        // This method is deprecated - use PathwayElementBadgeService instead
+        throw new UnsupportedOperationException("Use PathwayElementBadgeService.removeBadgeFromElement() instead");
     }
 
     @Override
@@ -162,20 +188,108 @@ public class PathwayElementServiceImpl implements PathwayElementService {
                element.get().getPathway().getOrganization().getId().equals(organizationId);
     }
 
+    @Override
+    public PathwayElementDTO createPathwayElementForCurrentUser(PathwayElementDTO elementDTO, Long pathwayId, String userEmail) {
+        // Get user's organization
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            throw new UnauthorizedException("User is not associated with any organization");
+        }
+        
+        // For now, use the first organization. In the future, you might want to allow selection
+        Organization organization = staffList.get(0).getOrganization();
+        
+        return createPathwayElement(elementDTO, pathwayId, organization.getId());
+    }
+
+    @Override
+    public List<PathwayElementDTO> getPathwayElementsForCurrentUser(Long pathwayId, String userEmail) {
+        // Get user's organization
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            return List.of(); // Return empty list if no organization
+        }
+        
+        // For now, use the first organization. In the future, you might want to return all organizations
+        Organization organization = staffList.get(0).getOrganization();
+        
+        return getPathwayElements(pathwayId, organization.getId());
+    }
+
+    @Override
+    public Optional<PathwayElementDTO> getPathwayElementByIdForCurrentUser(Long elementId, Long pathwayId, String userEmail) {
+        // Get user's organization
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        // For now, use the first organization. In the future, you might want to check all organizations
+        Organization organization = staffList.get(0).getOrganization();
+        
+        return getPathwayElementById(elementId, pathwayId, organization.getId());
+    }
+
+    @Override
+    public PathwayElementDTO updatePathwayElementForCurrentUser(Long elementId, PathwayElementDTO elementDTO, Long pathwayId, String userEmail) {
+        // Get user's organization
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            throw new UnauthorizedException("User is not associated with any organization");
+        }
+        
+        // For now, use the first organization. In the future, you might want to allow selection
+        Organization organization = staffList.get(0).getOrganization();
+        
+        return updatePathwayElement(elementId, elementDTO, pathwayId, organization.getId());
+    }
+
+    @Override
+    public void deletePathwayElementForCurrentUser(Long elementId, Long pathwayId, String userEmail) {
+        // Get user's organization
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            throw new UnauthorizedException("User is not associated with any organization");
+        }
+        
+        // For now, use the first organization. In the future, you might want to allow selection
+        Organization organization = staffList.get(0).getOrganization();
+        
+        deletePathwayElement(elementId, pathwayId, organization.getId());
+    }
+
     private PathwayElementDTO convertToDTO(PathwayElement element) {
         PathwayElementDTO dto = new PathwayElementDTO();
         dto.setId(element.getId());
         dto.setPathwayId(element.getPathway().getId());
-        dto.setElementType(element.getElementType());
-        dto.setOrderIndex(element.getOrderIndex());
+        dto.setParentElementId(element.getParentElement() != null ? element.getParentElement().getId() : null);
         dto.setName(element.getName());
         dto.setDescription(element.getDescription());
+        dto.setElementType(element.getElementType() != null ? element.getElementType().name() : null);
+        dto.setOrderIndex(element.getOrderIndex());
+        dto.setCompletionRule(element.getCompletionRule() != null ? element.getCompletionRule().name() : null);
+        dto.setRequiredCount(element.getRequiredCount());
+        dto.setIsOptional(element.getIsOptional());
+        dto.setCountsTowardsParent(element.getCountsTowardsParent());
         dto.setCreatedAt(element.getCreatedAt());
         
-        if (element.getBadgeClass() != null) {
-            dto.setBadgeClassId(element.getBadgeClass().getId());
-            dto.setBadgeClassName(element.getBadgeClass().getName());
-        }
+        // Note: Badge associations are now handled through PathwayElementBadgeService
+        // This method only converts basic element data
         
         return dto;
     }

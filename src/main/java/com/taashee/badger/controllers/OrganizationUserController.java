@@ -1,7 +1,15 @@
 package com.taashee.badger.controllers;
 
-import com.taashee.badger.models.*;
-import com.taashee.badger.repositories.*;
+import com.taashee.badger.models.User;
+import com.taashee.badger.models.OrganizationStaff;
+import com.taashee.badger.models.UserInvitation;
+import com.taashee.badger.models.OrganizationUser;
+import com.taashee.badger.models.ApiResponse;
+import com.taashee.badger.repositories.OrganizationRepository;
+import com.taashee.badger.repositories.OrganizationStaffRepository;
+import com.taashee.badger.repositories.OrganizationUserRepository;
+import com.taashee.badger.repositories.UserInvitationRepository;
+import com.taashee.badger.repositories.UserRepository;
 import com.taashee.badger.services.UserService;
 import com.taashee.badger.services.EmailVerificationService;
 import org.springframework.mail.SimpleMailMessage;
@@ -16,7 +24,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 // DTO for user data to avoid serialization issues
@@ -46,7 +61,7 @@ class UserDto {
     public Set<String> getRoles() { return roles; }
 }
 
-@Tag(name = "Organization User Management", description = "APIs for ISSUERs to manage users in their organization. OWNER permission required. Author: Lokya Naik")
+@Tag(name = "Organization User Management", description = "APIs for ORGANIZATION users to manage users in their organization. OWNER permission required. Author: Lokya Naik")
 @RestController
 @RequestMapping("/api/organization/users")
 public class OrganizationUserController {
@@ -80,15 +95,15 @@ public class OrganizationUserController {
         String email = auth.getName();
         
         // Get user
-        User issuer = userService.findByEmail(email);
-        if (issuer == null) {
+        User organizationUser = userService.findByEmail(email);
+        if (organizationUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null, "User not found")
             );
         }
         
         // Find organizations where user has OWNER permission
-        List<OrganizationStaff> ownerStaff = organizationStaffRepository.findByUserIdAndStaffRole(issuer.getId(), "owner");
+        List<OrganizationStaff> ownerStaff = organizationStaffRepository.findByUserIdAndStaffRole(organizationUser.getId(), "owner");
         if (ownerStaff.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "You don't have OWNER permission in any organization", null, "No OWNER permission")
@@ -137,17 +152,17 @@ public class OrganizationUserController {
             );
         }
         
-        // Get issuer
-        User issuer = userService.findByEmail(email);
-        if (issuer == null) {
+        // Get organization user
+        User organizationUser = userService.findByEmail(email);
+        if (organizationUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null, "User not found")
             );
         }
         
-        // Check if issuer has OWNER permission in this organization
+        // Check if organization user has OWNER permission in this organization
         Optional<OrganizationStaff> ownerStaff = organizationStaffRepository.findByUserIdAndOrganizationIdAndStaffRole(
-            issuer.getId(), organizationId, "owner");
+            organizationUser.getId(), organizationId, "owner");
         if (ownerStaff.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "You don't have OWNER permission in this organization", null, "No OWNER permission")
@@ -175,7 +190,7 @@ public class OrganizationUserController {
         invitation.setRole("USER"); // Always USER role for organization users
         invitation.setStatus(UserInvitation.Status.PENDING);
         invitation.setToken(UUID.randomUUID().toString());
-        invitation.setCreatedBy(issuer);
+        invitation.setCreatedBy(organizationUser);
         invitation.setCreatedAt(LocalDateTime.now());
         invitation.setOrganizationId(organizationId); // Store organization ID for mapping
         invitationRepository.save(invitation);
@@ -212,17 +227,17 @@ public class OrganizationUserController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         
-        // Get issuer
-        User issuer = userService.findByEmail(email);
-        if (issuer == null) {
+        // Get organization user
+        User organizationUser = userService.findByEmail(email);
+        if (organizationUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null, "User not found")
             );
         }
         
-        // Check if issuer has OWNER permission in this organization
+        // Check if organization user has OWNER permission in this organization
         Optional<OrganizationStaff> ownerStaff = organizationStaffRepository.findByUserIdAndOrganizationIdAndStaffRole(
-            issuer.getId(), organizationId, "owner");
+            organizationUser.getId(), organizationId, "owner");
         if (ownerStaff.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "You don't have OWNER permission in this organization", null, "No OWNER permission")
@@ -259,7 +274,7 @@ public class OrganizationUserController {
                 invitation.setRole("USER");
                 invitation.setStatus(UserInvitation.Status.PENDING);
                 invitation.setToken(UUID.randomUUID().toString());
-                invitation.setCreatedBy(issuer);
+                invitation.setCreatedBy(organizationUser);
                 invitation.setCreatedAt(LocalDateTime.now());
                 invitation.setOrganizationId(organizationId);
                 invitationRepository.save(invitation);
@@ -306,17 +321,17 @@ public class OrganizationUserController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         
-        // Get issuer
-        User issuer = userService.findByEmail(email);
-        if (issuer == null) {
+        // Get organization user
+        User organizationUser = userService.findByEmail(email);
+        if (organizationUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null, "User not found")
             );
         }
         
-        // Check if issuer has OWNER permission in this organization
+        // Check if organization user has OWNER permission in this organization
         Optional<OrganizationStaff> ownerStaff = organizationStaffRepository.findByUserIdAndOrganizationIdAndStaffRole(
-            issuer.getId(), organizationId, "owner");
+            organizationUser.getId(), organizationId, "owner");
         if (ownerStaff.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "You don't have OWNER permission in this organization", null, "No OWNER permission")

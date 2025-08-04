@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/organizations/{organizationId}/pathways/{pathwayId}/elements")
+@RequestMapping("/api/pathways/{pathwayId}/elements")
 @CrossOrigin(origins = "*")
 public class PathwayElementController {
 
@@ -23,12 +23,12 @@ public class PathwayElementController {
     @PostMapping
     @PreAuthorize("hasRole('ISSUER')")
     public ResponseEntity<ApiResponse<PathwayElementDTO>> createPathwayElement(
-            @PathVariable Long organizationId,
             @PathVariable Long pathwayId,
             @RequestBody PathwayElementDTO elementDTO) {
         
         try {
-            PathwayElementDTO createdElement = pathwayElementService.createPathwayElement(elementDTO, pathwayId, organizationId);
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            PathwayElementDTO createdElement = pathwayElementService.createPathwayElementForCurrentUser(elementDTO, pathwayId, userEmail);
             return ResponseEntity.ok(new ApiResponse<>(200, "Pathway element created successfully", createdElement, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -39,12 +39,11 @@ public class PathwayElementController {
     // Get all elements for a pathway
     @GetMapping
     @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<List<PathwayElementDTO>>> getPathwayElements(
-            @PathVariable Long organizationId,
-            @PathVariable Long pathwayId) {
+    public ResponseEntity<ApiResponse<List<PathwayElementDTO>>> getPathwayElements(@PathVariable Long pathwayId) {
         
         try {
-            List<PathwayElementDTO> elements = pathwayElementService.getPathwayElements(pathwayId, organizationId);
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            List<PathwayElementDTO> elements = pathwayElementService.getPathwayElementsForCurrentUser(pathwayId, userEmail);
             return ResponseEntity.ok(new ApiResponse<>(200, "Pathway elements retrieved successfully", elements, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -56,12 +55,12 @@ public class PathwayElementController {
     @GetMapping("/{elementId}")
     @PreAuthorize("hasRole('ISSUER')")
     public ResponseEntity<ApiResponse<PathwayElementDTO>> getPathwayElementById(
-            @PathVariable Long organizationId,
             @PathVariable Long pathwayId,
             @PathVariable Long elementId) {
         
         try {
-            Optional<PathwayElementDTO> element = pathwayElementService.getPathwayElementById(elementId, pathwayId, organizationId);
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Optional<PathwayElementDTO> element = pathwayElementService.getPathwayElementByIdForCurrentUser(elementId, pathwayId, userEmail);
             if (element.isPresent()) {
                 return ResponseEntity.ok(new ApiResponse<>(200, "Pathway element retrieved successfully", element.get(), null));
             } else {
@@ -77,13 +76,13 @@ public class PathwayElementController {
     @PutMapping("/{elementId}")
     @PreAuthorize("hasRole('ISSUER')")
     public ResponseEntity<ApiResponse<PathwayElementDTO>> updatePathwayElement(
-            @PathVariable Long organizationId,
             @PathVariable Long pathwayId,
             @PathVariable Long elementId,
             @RequestBody PathwayElementDTO elementDTO) {
         
         try {
-            PathwayElementDTO updatedElement = pathwayElementService.updatePathwayElement(elementId, elementDTO, pathwayId, organizationId);
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            PathwayElementDTO updatedElement = pathwayElementService.updatePathwayElementForCurrentUser(elementId, elementDTO, pathwayId, userEmail);
             return ResponseEntity.ok(new ApiResponse<>(200, "Pathway element updated successfully", updatedElement, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -95,12 +94,12 @@ public class PathwayElementController {
     @DeleteMapping("/{elementId}")
     @PreAuthorize("hasRole('ISSUER')")
     public ResponseEntity<ApiResponse<Void>> deletePathwayElement(
-            @PathVariable Long organizationId,
             @PathVariable Long pathwayId,
             @PathVariable Long elementId) {
         
         try {
-            pathwayElementService.deletePathwayElement(elementId, pathwayId, organizationId);
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            pathwayElementService.deletePathwayElementForCurrentUser(elementId, pathwayId, userEmail);
             return ResponseEntity.ok(new ApiResponse<>(200, "Pathway element deleted successfully", null, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

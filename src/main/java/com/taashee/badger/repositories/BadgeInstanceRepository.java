@@ -13,9 +13,14 @@ import java.util.Optional;
 @Repository
 public interface BadgeInstanceRepository extends JpaRepository<BadgeInstance, Long> {
     // Add custom queries if needed
-    List<BadgeInstance> findByRecipientId(Long userId);
-    Optional<BadgeInstance> findByIdAndRecipientId(Long badgeInstanceId, Long userId);
-    List<BadgeInstance> findByBadgeClassId(Long badgeClassId);
+    @Query("SELECT bi FROM BadgeInstance bi WHERE bi.recipient.id = :userId")
+    List<BadgeInstance> findByRecipientId(@Param("userId") Long userId);
+    
+    @Query("SELECT bi FROM BadgeInstance bi WHERE bi.id = :badgeInstanceId AND bi.recipient.id = :userId")
+    Optional<BadgeInstance> findByIdAndRecipientId(@Param("badgeInstanceId") Long badgeInstanceId, @Param("userId") Long userId);
+    
+    @Query("SELECT bi FROM BadgeInstance bi WHERE bi.badgeClass.id = :badgeClassId")
+    List<BadgeInstance> findByBadgeClassId(@Param("badgeClassId") Long badgeClassId);
     
     @Modifying
     @Query("DELETE FROM BadgeInstance bi WHERE bi.badgeClass.organization.id = :organizationId")
@@ -25,5 +30,6 @@ public interface BadgeInstanceRepository extends JpaRepository<BadgeInstance, Lo
     @Query("DELETE FROM BadgeInstance bi WHERE bi.recipient.id = :recipientId")
     void deleteByRecipientId(@Param("recipientId") Long recipientId);
     
-    List<BadgeInstance> findByBadgeClassIdAndRevokedFalse(Long badgeClassId);
+    @Query("SELECT bi FROM BadgeInstance bi WHERE bi.badgeClass.id = :badgeClassId AND bi.revoked = false")
+    List<BadgeInstance> findByBadgeClassIdAndRevokedFalse(@Param("badgeClassId") Long badgeClassId);
 } 

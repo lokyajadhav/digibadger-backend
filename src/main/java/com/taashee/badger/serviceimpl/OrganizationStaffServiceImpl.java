@@ -115,7 +115,7 @@ public class OrganizationStaffServiceImpl implements OrganizationStaffService {
             // Check if user is staff for any other organization
             List<OrganizationStaff> otherStaff = organizationStaffRepository.findByUserId(user.getId());
             if (otherStaff.isEmpty()) {
-                // Check if user has any other roles (besides ORGANIZATION)
+                // Check if user has any other roles (besides ISSUER)
                 if (user.getRoles() == null || user.getRoles().isEmpty() || (user.getRoles().size() == 1 && user.getRoles().contains("ISSUER"))) {
                     // Delete all invitations for this user
                     List<com.taashee.badger.models.OrganizationStaffInvitation> invites = invitationRepository.findByEmailAndStatus(user.getEmail(), com.taashee.badger.models.OrganizationStaffInvitation.Status.PENDING);
