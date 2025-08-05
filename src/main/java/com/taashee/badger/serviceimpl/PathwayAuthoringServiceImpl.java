@@ -66,10 +66,10 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
             } else {
                 PathwayElement parent = elementMap.get(element.getParentElement().getId());
                 if (parent != null) {
-                    if (parent.getChildElements() == null) {
-                        parent.setChildElements(new ArrayList<>());
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new ArrayList<>());
                     }
-                    parent.getChildElements().add(element);
+                    parent.getChildren().add(element);
                 }
             }
         }
@@ -134,10 +134,10 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         if (element.getParentElement() != null) {
             PathwayElement parent = pathwayElementRepository.findById(element.getParentElement().getId()).orElse(null);
             if (parent != null) {
-                if (parent.getChildElements() == null) {
-                    parent.setChildElements(new ArrayList<>());
+                if (parent.getChildren() == null) {
+                    parent.setChildren(new ArrayList<>());
                 }
-                parent.getChildElements().add(savedElement);
+                parent.getChildren().add(savedElement);
                 pathwayElementRepository.save(parent);
             }
         }
@@ -206,7 +206,7 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         }
         
         // Check if element has children
-        if (element.getChildElements() != null && !element.getChildElements().isEmpty()) {
+        if (element.getChildren() != null && !element.getChildren().isEmpty()) {
             throw new RuntimeException("Cannot delete element with children. Please delete children first.");
         }
         
@@ -219,8 +219,8 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         // Remove from parent's children list
         if (element.getParentElement() != null) {
             PathwayElement parent = pathwayElementRepository.findById(element.getParentElement().getId()).orElse(null);
-            if (parent != null && parent.getChildElements() != null) {
-                parent.getChildElements().removeIf(child -> child.getId().equals(elementId));
+            if (parent != null && parent.getChildren() != null) {
+                parent.getChildren().removeIf(child -> child.getId().equals(elementId));
                 pathwayElementRepository.save(parent);
             }
         }
@@ -252,8 +252,8 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         // Remove from current parent
         if (element.getParentElement() != null) {
             PathwayElement currentParent = pathwayElementRepository.findById(element.getParentElement().getId()).orElse(null);
-            if (currentParent != null && currentParent.getChildElements() != null) {
-                currentParent.getChildElements().removeIf(child -> child.getId().equals(elementId));
+            if (currentParent != null && currentParent.getChildren() != null) {
+                currentParent.getChildren().removeIf(child -> child.getId().equals(elementId));
                 pathwayElementRepository.save(currentParent);
             }
         }
@@ -276,10 +276,10 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
             element.setParentElement(newParent);
             
             // Add to parent's children
-            if (newParent.getChildElements() == null) {
-                newParent.setChildElements(new ArrayList<>());
+            if (newParent.getChildren() == null) {
+                newParent.setChildren(new ArrayList<>());
             }
-            newParent.getChildElements().add(element);
+            newParent.getChildren().add(element);
             pathwayElementRepository.save(newParent);
         } else {
             element.setParentElement(null);
@@ -423,11 +423,11 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
                 badgeInfo.put("name", badge.getName());
                 badgeInfo.put("description", badge.getDescription());
                 badgeInfo.put("imageUrl", badge.getImage());
-                badgeInfo.put("issuerName", badge.getOrganization().getName());
+                badgeInfo.put("issuerName", badge.getOrganization().getNameEnglish());
                 badgeInfo.put("source", "badgr");
                 badgeInfo.put("isInternal", true);
                 badgeInfo.put("tags", badge.getTags());
-                badgeInfo.put("criteria", badge.getCriteria());
+                badgeInfo.put("criteria", badge.getCriteriaText());
                 
                 results.add(badgeInfo);
             }
@@ -517,10 +517,7 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
             throw new RuntimeException("Access denied to pathway");
         }
         
-        badge.setIsVerified(true);
-        badge.setVerifiedAt(LocalDateTime.now());
-        badge.setVerifiedBy(user);
-        badge.setVerificationNotes(notes);
+        badge.verify(user.getId(), notes);
         badge.setUpdatedAt(LocalDateTime.now());
         
         return pathwayElementBadgeRepository.save(badge);
@@ -548,10 +545,10 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         }
         
         // Add competency alignment
-        if (element.getCompetencyAlignments() == null) {
-            element.setCompetencyAlignments(new ArrayList<>());
+        if (element.getCompetencies() == null) {
+            element.setCompetencies(new ArrayList<>());
         }
-        element.getCompetencyAlignments().add(competency);
+        element.getCompetencies().add(competency);
         element.setUpdatedAt(LocalDateTime.now());
         
         return pathwayElementRepository.save(element);
@@ -696,7 +693,7 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
     // Helper methods
     private boolean hasAccessToPathway(User user, Pathway pathway) {
         // Check if user is admin
-        if (user.getRole() == User.Role.ADMIN) {
+        if (user.getRoles().contains("ADMIN")) {
             return true;
         }
         
@@ -739,9 +736,9 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
     private void sortElementsByOrder(List<PathwayElement> elements) {
         elements.sort(Comparator.comparing(PathwayElement::getOrderIndex, Comparator.nullsLast(Comparator.naturalOrder())));
         for (PathwayElement element : elements) {
-            if (element.getChildElements() != null) {
-                sortElementsByOrder(element.getChildElements());
-            }
+                    if (element.getChildren() != null) {
+            sortElementsByOrder(element.getChildren());
+        }
         }
     }
     
@@ -769,7 +766,7 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         }
         
         // Check if element has children
-        if (element.getChildElements() != null && !element.getChildElements().isEmpty()) {
+        if (element.getChildren() != null && !element.getChildren().isEmpty()) {
             return true;
         }
         
@@ -801,8 +798,8 @@ public class PathwayAuthoringServiceImpl implements PathwayAuthoringService {
         visited.add(element.getId());
         recursionStack.add(element.getId());
         
-        if (element.getChildElements() != null) {
-            for (PathwayElement child : element.getChildElements()) {
+        if (element.getChildren() != null) {
+            for (PathwayElement child : element.getChildren()) {
                 if (isCyclicUtil(child, visited, recursionStack)) {
                     return true;
                 }

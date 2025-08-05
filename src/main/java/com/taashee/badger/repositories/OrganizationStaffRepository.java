@@ -34,4 +34,10 @@ public interface OrganizationStaffRepository extends JpaRepository<OrganizationS
     @Transactional
     @Query("DELETE FROM OrganizationStaff os WHERE os.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
+    
+    @Query("SELECT os FROM OrganizationStaff os WHERE os.user.email = :userEmail")
+    List<OrganizationStaff> findByUserEmail(@Param("userEmail") String userEmail);
+    
+    @Query("SELECT os FROM OrganizationStaff os WHERE os.user.email = :userEmail AND os.organization.id = :organizationId")
+    Optional<OrganizationStaff> findByUserEmailAndOrganizationId(@Param("userEmail") String userEmail, @Param("organizationId") Long organizationId);
 } 

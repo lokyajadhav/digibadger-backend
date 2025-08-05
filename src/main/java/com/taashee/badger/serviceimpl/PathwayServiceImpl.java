@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.function.Supplier;
+import java.util.ArrayList;
 
 @Service
 @Transactional
@@ -207,8 +208,241 @@ public class PathwayServiceImpl implements PathwayService {
 
     @Override
     public boolean pathwayExistsAndBelongsToOrganization(Long pathwayId, Long organizationId) {
-        Optional<Pathway> pathway = pathwayRepository.findById(pathwayId);
-        return pathway.isPresent() && pathway.get().getOrganization().getId().equals(organizationId);
+        return pathwayRepository.existsByIdAndOrganizationId(pathwayId, organizationId);
+    }
+
+    // === ENTERPRISE-GRADE PUBLISHING FUNCTIONALITY ===
+
+    @Override
+    public PathwayDTO publishPathway(Long pathwayId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // Check if user has permission to manage this pathway
+        if (!hasPermissionToManagePathway(pathwayId, userEmail)) {
+            throw new UnauthorizedException("You don't have permission to publish this pathway");
+        }
+        
+        // Validate pathway before publishing
+        List<String> validationErrors = validatePathwayForPublishing(pathwayId, userEmail);
+        if (!validationErrors.isEmpty()) {
+            throw new IllegalArgumentException("Pathway validation failed: " + String.join(", ", validationErrors));
+        }
+        
+        // Publish the pathway
+        pathway.publish(user);
+        Pathway savedPathway = pathwayRepository.save(pathway);
+        
+        return convertToDTO(savedPathway);
+    }
+
+    @Override
+    public PathwayDTO unpublishPathway(Long pathwayId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // Check if user has permission to manage this pathway
+        if (!hasPermissionToManagePathway(pathwayId, userEmail)) {
+            throw new UnauthorizedException("You don't have permission to unpublish this pathway");
+        }
+        
+        // Unpublish the pathway
+        pathway.unpublish();
+        Pathway savedPathway = pathwayRepository.save(pathway);
+        
+        return convertToDTO(savedPathway);
+    }
+
+    @Override
+    public PathwayDTO archivePathway(Long pathwayId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // Check if user has permission to manage this pathway
+        if (!hasPermissionToManagePathway(pathwayId, userEmail)) {
+            throw new UnauthorizedException("You don't have permission to archive this pathway");
+        }
+        
+        // Archive the pathway
+        pathway.archive();
+        Pathway savedPathway = pathwayRepository.save(pathway);
+        
+        return convertToDTO(savedPathway);
+    }
+
+    @Override
+    public List<String> validatePathwayForPublishing(Long pathwayId, String userEmail) {
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // Check if user has permission to manage this pathway
+        if (!hasPermissionToManagePathway(pathwayId, userEmail)) {
+            throw new UnauthorizedException("You don't have permission to validate this pathway");
+        }
+        
+        return pathway.getValidationErrors();
+    }
+
+    @Override
+    public PathwayDTO getPathwayValidationStatus(Long pathwayId, String userEmail) {
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // Check if user has permission to view this pathway
+        if (!hasPermissionToViewPathway(pathwayId, userEmail)) {
+            throw new UnauthorizedException("You don't have permission to view this pathway");
+        }
+        
+        return convertToDTO(pathway);
+    }
+
+    // === ORGANIZATION-SCOPED ACCESS CONTROL ===
+
+    @Override
+    public boolean hasPermissionToManagePathway(Long pathwayId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // ADMIN can manage all pathways
+        if (user.getRoles().contains("ADMIN")) {
+            return true;
+        }
+        
+        // ISSUER can only manage pathways in their organization
+        if (user.getRoles().contains("ISSUER")) {
+            List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+            return staffList.stream()
+                    .anyMatch(staff -> staff.getOrganization().getId().equals(pathway.getOrganization().getId()) &&
+                                     "owner".equalsIgnoreCase(staff.getStaffRole()));
+        }
+        
+        return false;
+    }
+
+    @Override
+    public boolean hasPermissionToViewPathway(Long pathwayId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // ADMIN can view all pathways
+        if (user.getRoles().contains("ADMIN")) {
+            return true;
+        }
+        
+        // ISSUER can view pathways in their organization
+        if (user.getRoles().contains("ISSUER")) {
+            List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+            return staffList.stream()
+                    .anyMatch(staff -> staff.getOrganization().getId().equals(pathway.getOrganization().getId()));
+        }
+        
+        // USER can view published pathways in their organization
+        if (user.getRoles().contains("USER")) {
+            List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+            return staffList.stream()
+                    .anyMatch(staff -> staff.getOrganization().getId().equals(pathway.getOrganization().getId())) &&
+                   Pathway.PathwayStatus.PUBLISHED.equals(pathway.getStatus());
+        }
+        
+        return false;
+    }
+
+    @Override
+    public Long getUserOrganizationId(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            throw new ResourceNotFoundException("User is not associated with any organization");
+        }
+        
+        // Return the first organization (assuming user belongs to one organization)
+        return staffList.get(0).getOrganization().getId();
+    }
+
+    // === PATHWAY STATUS MANAGEMENT ===
+
+    @Override
+    public List<PathwayDTO> getPathwaysByStatus(Long organizationId, Pathway.PathwayStatus status) {
+        List<Pathway> pathways = pathwayRepository.findByOrganizationIdAndStatus(organizationId, status);
+        return pathways.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public PathwayDTO getPathwayStatistics(Long organizationId) {
+        // This would return statistics about pathways in the organization
+        // For now, returning a placeholder
+        PathwayDTO stats = new PathwayDTO();
+        stats.setName("Pathway Statistics");
+        stats.setDescription("Statistics for organization " + organizationId);
+        return stats;
+    }
+
+    // === STUDENT ACCESS ===
+
+    @Override
+    public List<PathwayDTO> getPublishedPathwaysForStudent(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        if (staffList.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        Long organizationId = staffList.get(0).getOrganization().getId();
+        return getPublishedPathwaysForOrganization(organizationId);
+    }
+
+    @Override
+    public boolean canStudentEnrollInPathway(Long pathwayId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Pathway pathway = pathwayRepository.findById(pathwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
+        
+        // Check if pathway is published
+        if (!Pathway.PathwayStatus.PUBLISHED.equals(pathway.getStatus())) {
+            return false;
+        }
+        
+        // Check if user belongs to the same organization
+        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+        return staffList.stream()
+                .anyMatch(staff -> staff.getOrganization().getId().equals(pathway.getOrganization().getId()));
+    }
+
+    @Override
+    public List<PathwayDTO> getPublishedPathwaysForOrganization(Long organizationId) {
+        List<Pathway> pathways = pathwayRepository.findByOrganizationIdAndStatus(organizationId, Pathway.PathwayStatus.PUBLISHED);
+        return pathways.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<PathwayDTO> getPublishedPathwayById(Long pathwayId, Long organizationId) {
+        Optional<Pathway> pathway = pathwayRepository.findByIdAndOrganizationIdAndStatus(pathwayId, organizationId, Pathway.PathwayStatus.PUBLISHED);
+        return pathway.map(this::convertToDTO);
     }
 
     @Override

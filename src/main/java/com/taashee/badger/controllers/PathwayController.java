@@ -1,6 +1,7 @@
 package com.taashee.badger.controllers;
 
 import com.taashee.badger.models.PathwayDTO;
+import com.taashee.badger.models.Pathway;
 import com.taashee.badger.services.PathwayService;
 import com.taashee.badger.models.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,56 +103,142 @@ public class PathwayController {
         }
     }
 
-    // Get available pathways for users
-    @GetMapping("/available")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<List<PathwayDTO>>> getAvailablePathways(
-            @PathVariable Long organizationId) {
-        
+    // === ENTERPRISE-GRADE PUBLISHING ENDPOINTS ===
+
+    // Publish a pathway
+    @PostMapping("/{pathwayId}/publish")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<PathwayDTO>> publishPathway(@PathVariable Long pathwayId) {
         try {
-            // TODO: Get current user ID from security context
-            Long userId = 1L; // Placeholder
-            List<PathwayDTO> pathways = pathwayService.getAvailablePathwaysForUser(userId);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Available pathways retrieved successfully", pathways, null));
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            PathwayDTO publishedPathway = pathwayService.publishPathway(pathwayId, userEmail);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway published successfully", publishedPathway, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve available pathways", null, e.getMessage()));
+                    .body(new ApiResponse<>(400, "Failed to publish pathway", null, e.getMessage()));
         }
     }
 
-    // Enroll user in a pathway
-    @PostMapping("/{pathwayId}/enroll")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<Void>> enrollInPathway(
-            @PathVariable Long organizationId,
-            @PathVariable Long pathwayId) {
-        
+    // Unpublish a pathway
+    @PostMapping("/{pathwayId}/unpublish")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<PathwayDTO>> unpublishPathway(@PathVariable Long pathwayId) {
         try {
-            // TODO: Get current user ID from security context
-            Long userId = 1L; // Placeholder
-            pathwayService.enrollUserInPathway(pathwayId, userId);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Successfully enrolled in pathway", null, null));
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            PathwayDTO unpublishedPathway = pathwayService.unpublishPathway(pathwayId, userEmail);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway unpublished successfully", unpublishedPathway, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to enroll in pathway", null, e.getMessage()));
+                    .body(new ApiResponse<>(400, "Failed to unpublish pathway", null, e.getMessage()));
         }
     }
 
-    // Get pathway progress for a user
-    @GetMapping("/{pathwayId}/progress")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<PathwayDTO>> getPathwayProgress(
-            @PathVariable Long organizationId,
-            @PathVariable Long pathwayId) {
-        
+    // Archive a pathway
+    @PostMapping("/{pathwayId}/archive")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<PathwayDTO>> archivePathway(@PathVariable Long pathwayId) {
         try {
-            // TODO: Get current user ID from security context
-            Long userId = 1L; // Placeholder
-            PathwayDTO progress = pathwayService.getPathwayProgress(pathwayId, userId);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway progress retrieved successfully", progress, null));
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            PathwayDTO archivedPathway = pathwayService.archivePathway(pathwayId, userEmail);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway archived successfully", archivedPathway, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve pathway progress", null, e.getMessage()));
+                    .body(new ApiResponse<>(400, "Failed to archive pathway", null, e.getMessage()));
+        }
+    }
+
+    // Validate pathway for publishing
+    @GetMapping("/{pathwayId}/validate")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<List<String>>> validatePathway(@PathVariable Long pathwayId) {
+        try {
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            List<String> validationErrors = pathwayService.validatePathwayForPublishing(pathwayId, userEmail);
+            if (validationErrors.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse<>(200, "Pathway is valid for publishing", validationErrors, null));
+            } else {
+                return ResponseEntity.ok(new ApiResponse<>(400, "Pathway validation failed", validationErrors, null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(400, "Failed to validate pathway", null, e.getMessage()));
+        }
+    }
+
+    // Get pathway validation status
+    @GetMapping("/{pathwayId}/validation-status")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<PathwayDTO>> getPathwayValidationStatus(@PathVariable Long pathwayId) {
+        try {
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            PathwayDTO pathway = pathwayService.getPathwayValidationStatus(pathwayId, userEmail);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway validation status retrieved", pathway, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(400, "Failed to get pathway validation status", null, e.getMessage()));
+        }
+    }
+
+    // === ORGANIZATION-SCOPED ACCESS CONTROL ENDPOINTS ===
+
+    // Get pathways by status for current user's organization
+    @GetMapping("/status/{status}")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<List<PathwayDTO>>> getPathwaysByStatus(@PathVariable String status) {
+        try {
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Long organizationId = pathwayService.getUserOrganizationId(userEmail);
+            Pathway.PathwayStatus pathwayStatus = Pathway.PathwayStatus.valueOf(status.toUpperCase());
+            List<PathwayDTO> pathways = pathwayService.getPathwaysByStatus(organizationId, pathwayStatus);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Pathways retrieved by status", pathways, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(400, "Failed to retrieve pathways by status", null, e.getMessage()));
+        }
+    }
+
+    // Get pathway statistics for current user's organization
+    @GetMapping("/statistics")
+    @PreAuthorize("hasRole('ISSUER')")
+    public ResponseEntity<ApiResponse<PathwayDTO>> getPathwayStatistics() {
+        try {
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Long organizationId = pathwayService.getUserOrganizationId(userEmail);
+            PathwayDTO statistics = pathwayService.getPathwayStatistics(organizationId);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway statistics retrieved", statistics, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(400, "Failed to retrieve pathway statistics", null, e.getMessage()));
+        }
+    }
+
+    // === STUDENT ACCESS ENDPOINTS ===
+
+    // Get published pathways for student
+    @GetMapping("/student/published")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<List<PathwayDTO>>> getPublishedPathwaysForStudent() {
+        try {
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            List<PathwayDTO> pathways = pathwayService.getPublishedPathwaysForStudent(userEmail);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Published pathways retrieved for student", pathways, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(400, "Failed to retrieve published pathways", null, e.getMessage()));
+        }
+    }
+
+    // Check if student can enroll in pathway
+    @GetMapping("/{pathwayId}/can-enroll")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<Boolean>> canEnrollInPathway(@PathVariable Long pathwayId) {
+        try {
+            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            boolean canEnroll = pathwayService.canStudentEnrollInPathway(pathwayId, userEmail);
+            return ResponseEntity.ok(new ApiResponse<>(200, "Enrollment check completed", canEnroll, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(400, "Failed to check enrollment eligibility", null, e.getMessage()));
         }
     }
 } 
