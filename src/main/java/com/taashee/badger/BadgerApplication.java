@@ -16,6 +16,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.util.Timeout;
 import java.time.Duration;
 
+
 @OpenAPIDefinition(
     info = @Info(
         title = "Badger Management API",
@@ -43,6 +44,8 @@ public class BadgerApplication {
 	@Bean
 	public RestTemplate restTemplate(RestTemplateBuilder builder) {
 		// Configure HTTP client with enterprise-grade settings
+		//set
+		System.out.println("Setting up rest template");
 		RequestConfig requestConfig = RequestConfig.custom()
 			.setConnectTimeout(Timeout.ofSeconds(30))
 			.setResponseTimeout(Timeout.ofSeconds(60))
