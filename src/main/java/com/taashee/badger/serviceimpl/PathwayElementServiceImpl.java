@@ -91,7 +91,7 @@ public class PathwayElementServiceImpl implements PathwayElementService {
             throw new UnauthorizedException("Pathway does not belong to this organization");
         }
 
-        List<PathwayElement> elements = pathwayElementRepository.findByPathwayIdOrderByOrderIndex(pathwayId);
+        List<PathwayElement> elements = pathwayElementRepository.findByPathwayIdOrderByOrderIndexAsc(pathwayId);
         return elements.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());

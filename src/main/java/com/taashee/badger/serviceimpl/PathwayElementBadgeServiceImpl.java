@@ -226,7 +226,7 @@ public class PathwayElementBadgeServiceImpl implements PathwayElementBadgeServic
             throw new UnauthorizedException("Pathway element does not belong to this organization");
         }
 
-        return pathwayElementBadgeRepository.countRequiredBadgesByElementId(elementId);
+        return pathwayElementBadgeRepository.countByElementIdAndIsRequiredTrue(elementId);
     }
 
     @Override
