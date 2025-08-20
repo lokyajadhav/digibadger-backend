@@ -73,19 +73,19 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     List<PathwayElement> findByPathwayIdAndBadgeCount(@Param("pathwayId") Long pathwayId, @Param("badgeCount") int badgeCount);
     
     // Find elements that can be completed (no prerequisites or prerequisites met)
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "(pe.prerequisites IS NULL OR pe.prerequisites = '[]' OR " +
-           "pe.id IN (SELECT pep.element.id FROM PathwayElementProgress pep WHERE pep.isCompleted = true))")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "(pe.prerequisites IS NULL OR pe.prerequisites::text = '[]' OR " +
+           "pe.id IN (SELECT pep.element_id FROM pathway_element_progress pep WHERE pep.is_completed = true))", nativeQuery = true)
     List<PathwayElement> findCompletableElementsByPathwayId(@Param("pathwayId") Long pathwayId);
     
     // Find elements by pathway ID and competency framework
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.competencies LIKE %:framework%")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.competencies::text LIKE %:framework%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndCompetencyFramework(@Param("pathwayId") Long pathwayId, @Param("framework") String framework);
     
     // Find elements by pathway ID and metadata search
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.metadata LIKE %:searchTerm%")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.metadata::text LIKE %:searchTerm%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMetadataSearch(@Param("pathwayId") Long pathwayId, @Param("searchTerm") String searchTerm);
     
     // Find elements by pathway ID and completion status
@@ -130,18 +130,18 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     List<PathwayElement> findByPathwayIdAndTotalBadgeCount(@Param("pathwayId") Long pathwayId, @Param("totalCount") int totalCount);
     
     // Find elements by pathway ID and competency ID
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.competencies LIKE %:competencyId%")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.competencies::text LIKE %:competencyId%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndCompetencyId(@Param("pathwayId") Long pathwayId, @Param("competencyId") String competencyId);
     
     // Find elements by pathway ID and minimum alignment strength
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.competencies LIKE %:minStrength%")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.competencies::text LIKE %:minStrength%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMinAlignmentStrength(@Param("pathwayId") Long pathwayId, @Param("minStrength") Double minStrength);
     
     // Find elements by pathway ID and alignment type
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.competencies LIKE %:alignmentType%")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.competencies::text LIKE %:alignmentType%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndAlignmentType(@Param("pathwayId") Long pathwayId, @Param("alignmentType") String alignmentType);
     
     // Find elements by pathway ID and creation date range
