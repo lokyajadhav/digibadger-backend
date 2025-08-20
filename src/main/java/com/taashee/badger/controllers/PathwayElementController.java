@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/pathways/{pathwayId}/elements")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/pathway-elements")
 public class PathwayElementController {
 
     @Autowired
