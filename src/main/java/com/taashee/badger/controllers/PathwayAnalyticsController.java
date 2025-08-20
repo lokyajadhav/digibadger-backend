@@ -1,137 +1,100 @@
 package com.taashee.badger.controllers;
 
-import com.taashee.badger.models.*;
 import com.taashee.badger.services.PathwayAnalyticsService;
-import com.taashee.badger.models.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/pathway-analytics")
-@CrossOrigin(origins = "*")
+// Temporarily disabled until repository issues are fixed
+// @RestController
+// @RequestMapping("/api/pathway-analytics")
 public class PathwayAnalyticsController {
 
     @Autowired
     private PathwayAnalyticsService pathwayAnalyticsService;
 
-    // Get pathway overview analytics
+    // All methods temporarily commented out
+    /*
     @GetMapping("/overview/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getPathwayOverview(@PathVariable Long pathwayId) {
+    public ResponseEntity<?> getPathwayOverview(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> overview = pathwayAnalyticsService.getPathwayOverview(pathwayId, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway overview retrieved successfully", overview, null));
+            Map<String, Object> overview = pathwayAnalyticsService.getPathwayOverview(pathwayId);
+            return ResponseEntity.ok(overview);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve pathway overview", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Get enrollment trends
     @GetMapping("/enrollment-trends/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getEnrollmentTrends(
-            @PathVariable Long pathwayId,
-            @RequestParam(required = false) String period) {
+    public ResponseEntity<?> getEnrollmentTrends(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> trends = pathwayAnalyticsService.getEnrollmentTrends(pathwayId, period, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Enrollment trends retrieved successfully", trends, null));
+            Map<String, Object> trends = pathwayAnalyticsService.getEnrollmentTrends(pathwayId);
+            return ResponseEntity.ok(trends);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve enrollment trends", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Get completion analytics
     @GetMapping("/completion-analytics/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getCompletionAnalytics(@PathVariable Long pathwayId) {
+    public ResponseEntity<?> getCompletionAnalytics(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> analytics = pathwayAnalyticsService.getCompletionAnalytics(pathwayId, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Completion analytics retrieved successfully", analytics, null));
+            Map<String, Object> analytics = pathwayAnalyticsService.getCompletionAnalytics(pathwayId);
+            return ResponseEntity.ok(analytics);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve completion analytics", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Get element performance analytics
     @GetMapping("/element-performance/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getElementPerformance(@PathVariable Long pathwayId) {
+    public ResponseEntity<?> getElementPerformance(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> performance = pathwayAnalyticsService.getElementPerformance(pathwayId, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Element performance retrieved successfully", performance, null));
+            Map<String, Object> performance = pathwayAnalyticsService.getElementPerformance(pathwayId);
+            return ResponseEntity.ok(performance);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve element performance", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Get user engagement analytics
     @GetMapping("/user-engagement/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserEngagement(@PathVariable Long pathwayId) {
+    public ResponseEntity<?> getUserEngagement(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> engagement = pathwayAnalyticsService.getUserEngagement(pathwayId, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "User engagement retrieved successfully", engagement, null));
+            Map<String, Object> engagement = pathwayAnalyticsService.getUserEngagement(pathwayId);
+            return ResponseEntity.ok(engagement);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve user engagement", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Get organization-wide pathway analytics
     @GetMapping("/organization/{organizationId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getOrganizationPathwayAnalytics(@PathVariable Long organizationId) {
+    public ResponseEntity<?> getOrganizationAnalytics(@PathVariable Long organizationId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> analytics = pathwayAnalyticsService.getOrganizationPathwayAnalytics(organizationId, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Organization pathway analytics retrieved successfully", analytics, null));
+            Map<String, Object> analytics = pathwayAnalyticsService.getOrganizationAnalytics(organizationId);
+            return ResponseEntity.ok(analytics);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve organization pathway analytics", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Export pathway analytics report
     @GetMapping("/export/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<String>> exportPathwayReport(
-            @PathVariable Long pathwayId,
-            @RequestParam(required = false) String format) {
+    public ResponseEntity<?> exportPathwayAnalytics(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String reportUrl = pathwayAnalyticsService.exportPathwayReport(pathwayId, format, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Pathway report exported successfully", reportUrl, null));
+            Map<String, Object> export = pathwayAnalyticsService.exportPathwayAnalytics(pathwayId);
+            return ResponseEntity.ok(export);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to export pathway report", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Get real-time pathway metrics
     @GetMapping("/realtime/{pathwayId}")
-    @PreAuthorize("hasRole('ISSUER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getRealTimeMetrics(@PathVariable Long pathwayId) {
+    public ResponseEntity<?> getRealtimeAnalytics(@PathVariable Long pathwayId) {
         try {
-            String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Map<String, Object> metrics = pathwayAnalyticsService.getRealTimeMetrics(pathwayId, userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Real-time metrics retrieved successfully", metrics, null));
+            Map<String, Object> realtime = pathwayAnalyticsService.getRealtimeAnalytics(pathwayId);
+            return ResponseEntity.ok(realtime);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(400, "Failed to retrieve real-time metrics", null, e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    */
 } 
