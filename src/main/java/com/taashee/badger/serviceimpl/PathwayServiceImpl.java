@@ -95,10 +95,22 @@ public class PathwayServiceImpl implements PathwayService {
 
     @Override
     public List<PathwayDTO> getPathwaysByOrganization(Long organizationId) {
-        List<Pathway> pathways = pathwayRepository.findByOrganizationId(organizationId);
-        return pathways.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        try {
+            System.out.println("Executing findByOrganizationId query for organization: " + organizationId);
+            List<Pathway> pathways = pathwayRepository.findByOrganizationId(organizationId);
+            System.out.println("Repository query completed, found " + pathways.size() + " pathways");
+            
+            List<PathwayDTO> pathwayDTOs = pathways.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+            System.out.println("DTO conversion completed successfully");
+            
+            return pathwayDTOs;
+        } catch (Exception e) {
+            System.err.println("Error in getPathwaysByOrganization for organization " + organizationId + ": " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to retrieve pathways for organization " + organizationId + ": " + e.getMessage(), e);
+        }
     }
 
     @Override
