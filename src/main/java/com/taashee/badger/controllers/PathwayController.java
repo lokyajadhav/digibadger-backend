@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/pathways")
-@CrossOrigin(origins = "*")
 public class PathwayController {
 
     @Autowired
