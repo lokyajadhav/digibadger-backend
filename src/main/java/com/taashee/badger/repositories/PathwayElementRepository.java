@@ -80,12 +80,12 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     
     // Find elements by pathway ID and competency framework
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.competencies::text LIKE %:framework%", nativeQuery = true)
+           "pe.competencies::text LIKE CONCAT('%', :framework, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndCompetencyFramework(@Param("pathwayId") Long pathwayId, @Param("framework") String framework);
     
     // Find elements by pathway ID and metadata search
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.metadata::text LIKE %:searchTerm%", nativeQuery = true)
+           "pe.metadata::text LIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMetadataSearch(@Param("pathwayId") Long pathwayId, @Param("searchTerm") String searchTerm);
     
     // Find elements by pathway ID and completion status
@@ -131,17 +131,17 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     
     // Find elements by pathway ID and competency ID
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.competencies::text LIKE %:competencyId%", nativeQuery = true)
+           "pe.competencies::text LIKE CONCAT('%', :competencyId, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndCompetencyId(@Param("pathwayId") Long pathwayId, @Param("competencyId") String competencyId);
     
     // Find elements by pathway ID and minimum alignment strength
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.competencies::text LIKE %:minStrength%", nativeQuery = true)
+           "pe.competencies::text LIKE CONCAT('%', :minStrength, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMinAlignmentStrength(@Param("pathwayId") Long pathwayId, @Param("minStrength") Double minStrength);
     
     // Find elements by pathway ID and alignment type
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.competencies::text LIKE %:alignmentType%", nativeQuery = true)
+           "pe.competencies::text LIKE CONCAT('%', :alignmentType, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndAlignmentType(@Param("pathwayId") Long pathwayId, @Param("alignmentType") String alignmentType);
     
     // Find elements by pathway ID and creation date range
@@ -194,27 +194,27 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     
     // Find elements by pathway ID and tag pattern
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.tags::text LIKE %:tagPattern%", nativeQuery = true)
+           "pe.tags::text LIKE CONCAT('%', :tagPattern, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndTagPattern(@Param("pathwayId") Long pathwayId, @Param("tagPattern") String tagPattern);
     
     // Find elements by pathway ID and competency pattern
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.competencies::text LIKE %:competencyPattern%", nativeQuery = true)
+           "pe.competencies::text LIKE CONCAT('%', :competencyPattern, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndCompetencyPattern(@Param("pathwayId") Long pathwayId, @Param("competencyPattern") String competencyPattern);
     
     // Find elements by pathway ID and prerequisite pattern
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.prerequisites::text LIKE %:prerequisitePattern%", nativeQuery = true)
+           "pe.prerequisites::text LIKE CONCAT('%', :prerequisitePattern, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndPrerequisitePattern(@Param("pathwayId") Long pathwayId, @Param("prerequisitePattern") String prerequisitePattern);
     
     // Find elements by pathway ID and metadata key pattern
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.metadata::text LIKE %:keyPattern%", nativeQuery = true)
+           "pe.metadata::text LIKE CONCAT('%', :keyPattern, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMetadataKeyPattern(@Param("pathwayId") Long pathwayId, @Param("keyPattern") String keyPattern);
     
     // Find elements by pathway ID and metadata value pattern
     @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
-           "pe.metadata::text LIKE %:valuePattern%", nativeQuery = true)
+           "pe.metadata::text LIKE CONCAT('%', :valuePattern, '%')", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMetadataValuePattern(@Param("pathwayId") Long pathwayId, @Param("valuePattern") String valuePattern);
     
     // Find elements by pathway ID and parent element ID

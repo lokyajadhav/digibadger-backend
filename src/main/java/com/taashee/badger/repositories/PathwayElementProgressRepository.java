@@ -87,11 +87,11 @@ public interface PathwayElementProgressRepository extends JpaRepository<PathwayE
     List<PathwayElementProgress> findByElementIdAndCompletedBadgesCount(@Param("elementId") Long elementId, @Param("badgeCount") int badgeCount);
     
     // Find progress by pathway progress ID and completed badges search (PostgreSQL compatible)
-    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.pathway_progress_id = :pathwayProgressId AND pep.completed_badges::text LIKE %:searchTerm%", nativeQuery = true)
+    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.pathway_progress_id = :pathwayProgressId AND pep.completed_badges::text LIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<PathwayElementProgress> findByPathwayProgressIdAndCompletedBadgesSearch(@Param("pathwayProgressId") Long pathwayProgressId, @Param("searchTerm") String searchTerm);
     
     // Find progress by element ID and completed badges search (PostgreSQL compatible)
-    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.element_id = :elementId AND pep.completed_badges::text LIKE %:searchTerm%", nativeQuery = true)
+    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.element_id = :elementId AND pep.completed_badges::text LIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<PathwayElementProgress> findByElementIdAndCompletedBadgesSearch(@Param("elementId") Long elementId, @Param("searchTerm") String searchTerm);
     
     // Count completed progress by pathway progress ID
@@ -165,10 +165,10 @@ public interface PathwayElementProgressRepository extends JpaRepository<PathwayE
     List<PathwayElementProgress> findByElementIdAndCompletedBadgesCountOrderByCompletedAtDesc(@Param("elementId") Long elementId, @Param("badgeCount") int badgeCount);
     
     // Find progress by pathway progress ID and completed badges search (PostgreSQL compatible)
-    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.pathway_progress_id = :pathwayProgressId AND pep.completed_badges::text LIKE %:searchTerm% ORDER BY pep.completed_at DESC", nativeQuery = true)
+    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.pathway_progress_id = :pathwayProgressId AND pep.completed_badges::text LIKE CONCAT('%', :searchTerm, '%') ORDER BY pep.completed_at DESC", nativeQuery = true)
     List<PathwayElementProgress> findByPathwayProgressIdAndCompletedBadgesSearchOrderByCompletedAtDesc(@Param("pathwayProgressId") Long pathwayProgressId, @Param("searchTerm") String searchTerm);
     
     // Find progress by element ID and completed badges search (PostgreSQL compatible)
-    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.element_id = :elementId AND pep.completed_badges::text LIKE %:searchTerm% ORDER BY pep.completed_at DESC", nativeQuery = true)
+    @Query(value = "SELECT pep.* FROM pathway_element_progress pep WHERE pep.element_id = :elementId AND pep.completed_badges::text LIKE CONCAT('%', :searchTerm, '%') ORDER BY pep.completed_at DESC", nativeQuery = true)
     List<PathwayElementProgress> findByElementIdAndCompletedBadgesSearchOrderByCompletedAtDesc(@Param("elementId") Long elementId, @Param("searchTerm") String searchTerm);
 } 
