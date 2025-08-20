@@ -17,7 +17,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/organization/api-config")
-@CrossOrigin(origins = "*")
 @Tag(name = "Organization API Configuration", description = "APIs for managing organization API integrations for 2-way sync. ISSUER permission required. Author: Enterprise Badger")
 public class OrganizationApiConfigController {
 
