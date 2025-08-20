@@ -44,7 +44,6 @@ public class BadgerApplication {
 	@Bean
 	public RestTemplate restTemplate(RestTemplateBuilder builder) {
 		// Configure HTTP client with enterprise-grade settings
-		//set
 		System.out.println("Setting up rest template");
 		RequestConfig requestConfig = RequestConfig.custom()
 			.setConnectTimeout(Timeout.ofSeconds(30))
@@ -60,8 +59,6 @@ public class BadgerApplication {
 
 		return builder
 			.requestFactory(() -> factory)
-			.setConnectTimeout(Duration.ofSeconds(30))
-			.setReadTimeout(Duration.ofSeconds(60))
 			.build();
 	}
 }

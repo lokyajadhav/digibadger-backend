@@ -1,0 +1,1 @@
+cmd.exe /X /C "C:\Users\taashee\AppData\Roaming\Cursor\User\globalStorage\pleiades.java-extension-pack-jdk\java\latest\bin\javac @C:/Users/taashee/Desktop/Badger-management/badger/target/org.codehaus.plexus.compiler.javac.JavacCompiler3001560556624988243arguments"

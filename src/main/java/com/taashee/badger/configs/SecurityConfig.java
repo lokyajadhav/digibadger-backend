@@ -7,27 +7,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.cors.CorsConfigurationSource;
-import java.util.List;
+
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.beans.factory.annotation.Qualifier;
-import com.taashee.badger.configs.CustomOAuth2SuccessHandler;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @Autowired
-    private CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -51,25 +36,10 @@ public class SecurityConfig {
                     "/oauth2/**",
                     "/login/oauth2/**"
                 ).permitAll()
-                .anyRequest().authenticated()
-            .and()
-            .oauth2Login()
-                .successHandler(customOAuth2SuccessHandler)
+                .anyRequest().permitAll() // Temporarily allow all requests for testing
             .and()
             .httpBasic();
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
 } 
