@@ -94,6 +94,7 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PathwayDTO> getPathwaysByOrganization(Long organizationId) {
         try {
             System.out.println("Executing findByOrganizationId query for organization: " + organizationId);
