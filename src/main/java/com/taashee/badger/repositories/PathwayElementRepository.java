@@ -13,40 +13,52 @@ import java.util.Optional;
 public interface PathwayElementRepository extends JpaRepository<PathwayElement, Long> {
     
     // Find elements by pathway ID
-    List<PathwayElement> findByPathwayId(Long pathwayId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId")
+    List<PathwayElement> findByPathwayId(@Param("pathwayId") Long pathwayId);
     
     // Find root elements (no parent) by pathway ID
-    List<PathwayElement> findByPathwayIdAndParentElementIsNull(Long pathwayId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.parentElement IS NULL")
+    List<PathwayElement> findByPathwayIdAndParentElementIsNull(@Param("pathwayId") Long pathwayId);
     
     // Find children of a specific element
-    List<PathwayElement> findByParentElementId(Long parentElementId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.parentElement.id = :parentElementId")
+    List<PathwayElement> findByParentElementId(@Param("parentElementId") Long parentElementId);
     
     // Find elements by pathway ID and element type
-    List<PathwayElement> findByPathwayIdAndElementType(Long pathwayId, PathwayElement.ElementType elementType);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.elementType = :elementType")
+    List<PathwayElement> findByPathwayIdAndElementType(@Param("pathwayId") Long pathwayId, @Param("elementType") PathwayElement.ElementType elementType);
     
     // Count elements by pathway ID
-    long countByPathwayId(Long pathwayId);
+    @Query("SELECT COUNT(pe) FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId")
+    long countByPathwayId(@Param("pathwayId") Long pathwayId);
     
     // Find elements by pathway ID and short code
-    Optional<PathwayElement> findByPathwayIdAndShortCode(Long pathwayId, String shortCode);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.shortCode = :shortCode")
+    Optional<PathwayElement> findByPathwayIdAndShortCode(@Param("pathwayId") Long pathwayId, @Param("shortCode") String shortCode);
     
     // Find elements by pathway ID and counts towards parent
-    List<PathwayElement> findByPathwayIdAndCountsTowardsParent(Long pathwayId, Boolean countsTowardsParent);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.countsTowardsParent = :countsTowardsParent")
+    List<PathwayElement> findByPathwayIdAndCountsTowardsParent(@Param("pathwayId") Long pathwayId, @Param("countsTowardsParent") Boolean countsTowardsParent);
     
     // Find elements by pathway ID and required count
-    List<PathwayElement> findByPathwayIdAndRequiredCount(Long pathwayId, Integer requiredCount);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.requiredCount = :requiredCount")
+    List<PathwayElement> findByPathwayIdAndRequiredCount(@Param("pathwayId") Long pathwayId, @Param("requiredCount") Integer requiredCount);
     
     // Find elements by pathway ID and difficulty level
-    List<PathwayElement> findByPathwayIdAndDifficultyLevel(Long pathwayId, PathwayElement.DifficultyLevel difficultyLevel);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.difficultyLevel = :difficultyLevel")
+    List<PathwayElement> findByPathwayIdAndDifficultyLevel(@Param("pathwayId") Long pathwayId, @Param("difficultyLevel") PathwayElement.DifficultyLevel difficultyLevel);
     
     // Find elements by pathway ID and completion rule
-    List<PathwayElement> findByPathwayIdAndCompletionRule(Long pathwayId, PathwayElement.CompletionRule completionRule);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.completionRule = :completionRule")
+    List<PathwayElement> findByPathwayIdAndCompletionRule(@Param("pathwayId") Long pathwayId, @Param("completionRule") PathwayElement.CompletionRule completionRule);
     
     // Find optional elements by pathway ID
-    List<PathwayElement> findByPathwayIdAndIsOptionalTrue(Long pathwayId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.isOptional = true")
+    List<PathwayElement> findByPathwayIdAndIsOptionalTrue(@Param("pathwayId") Long pathwayId);
     
     // Find required elements by pathway ID
-    List<PathwayElement> findByPathwayIdAndIsOptionalFalse(Long pathwayId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.isOptional = false")
+    List<PathwayElement> findByPathwayIdAndIsOptionalFalse(@Param("pathwayId") Long pathwayId);
     
     // Find elements by pathway ID and estimated duration range
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
@@ -99,7 +111,7 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     
     // Find elements by pathway ID and external badge
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.id IN (SELECT pb.element.id FROM PathwayElementBadge pb WHERE pb.externalBadgeUrl IS NOT NULL)")
+           "pe.id IN (SELECT pb.element.id FROM PathwayElementBadge pb WHERE pb.externalBadgeId IS NOT NULL)")
     List<PathwayElement> findByPathwayIdAndExternalBadge(@Param("pathwayId") Long pathwayId);
     
     // Find elements by pathway ID and required badge count
@@ -117,12 +129,12 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
            "(SELECT COUNT(pb) FROM PathwayElementBadge pb WHERE pb.element.id = pe.id) = :totalCount")
     List<PathwayElement> findByPathwayIdAndTotalBadgeCount(@Param("pathwayId") Long pathwayId, @Param("totalCount") int totalCount);
     
-    // Find elements by pathway ID and competency alignment
+    // Find elements by pathway ID and competency ID
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_EXTRACT(pe.competencies, '$[*].competencyId') LIKE %:competencyId%")
+           "JSON_SEARCH(pe.competencies, 'one', :competencyId) IS NOT NULL")
     List<PathwayElement> findByPathwayIdAndCompetencyId(@Param("pathwayId") Long pathwayId, @Param("competencyId") String competencyId);
     
-    // Find elements by pathway ID and alignment strength
+    // Find elements by pathway ID and minimum alignment strength
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
            "JSON_EXTRACT(pe.competencies, '$[*].alignmentStrength') >= :minStrength")
     List<PathwayElement> findByPathwayIdAndMinAlignmentStrength(@Param("pathwayId") Long pathwayId, @Param("minStrength") Double minStrength);
@@ -133,46 +145,56 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     List<PathwayElement> findByPathwayIdAndAlignmentType(@Param("pathwayId") Long pathwayId, @Param("alignmentType") String alignmentType);
     
     // Find elements by pathway ID and creation date range
-    List<PathwayElement> findByPathwayIdAndCreatedAtBetween(Long pathwayId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.createdAt BETWEEN :startDate AND :endDate")
+    List<PathwayElement> findByPathwayIdAndCreatedAtBetween(@Param("pathwayId") Long pathwayId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
     
     // Find elements by pathway ID and update date range
-    List<PathwayElement> findByPathwayIdAndUpdatedAtBetween(Long pathwayId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.updatedAt BETWEEN :startDate AND :endDate")
+    List<PathwayElement> findByPathwayIdAndUpdatedAtBetween(@Param("pathwayId") Long pathwayId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
     
     // Find elements by pathway ID and order index range
-    List<PathwayElement> findByPathwayIdAndOrderIndexBetween(Long pathwayId, Integer startIndex, Integer endIndex);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.orderIndex BETWEEN :startIndex AND :endIndex")
+    List<PathwayElement> findByPathwayIdAndOrderIndexBetween(@Param("pathwayId") Long pathwayId, @Param("startIndex") Integer startIndex, @Param("endIndex") Integer endIndex);
     
-    // Find elements by pathway ID and estimated duration
-    List<PathwayElement> findByPathwayIdAndEstimatedDurationHoursBetween(Long pathwayId, Double minHours, Double maxHours);
+    // Find elements by pathway ID and estimated duration hours range
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.estimatedDurationHours BETWEEN :minHours AND :maxHours")
+    List<PathwayElement> findByPathwayIdAndEstimatedDurationHoursBetween(@Param("pathwayId") Long pathwayId, @Param("minHours") Double minHours, @Param("maxHours") Double maxHours);
     
-    // Find elements by pathway ID and difficulty level range
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "pe.difficultyLevel IN :difficultyLevels")
+    // Find elements by pathway ID and difficulty levels
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.difficultyLevel IN :difficultyLevels")
     List<PathwayElement> findByPathwayIdAndDifficultyLevelIn(@Param("pathwayId") Long pathwayId, @Param("difficultyLevels") List<PathwayElement.DifficultyLevel> difficultyLevels);
     
-    // Find elements by pathway ID and element type in
-    List<PathwayElement> findByPathwayIdAndElementTypeIn(Long pathwayId, List<PathwayElement.ElementType> elementTypes);
+    // Find elements by pathway ID and element types
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.elementType IN :elementTypes")
+    List<PathwayElement> findByPathwayIdAndElementTypeIn(@Param("pathwayId") Long pathwayId, @Param("elementTypes") List<PathwayElement.ElementType> elementTypes);
     
-    // Find elements by pathway ID and completion rule in
-    List<PathwayElement> findByPathwayIdAndCompletionRuleIn(Long pathwayId, List<PathwayElement.CompletionRule> completionRules);
+    // Find elements by pathway ID and completion rules
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.completionRule IN :completionRules")
+    List<PathwayElement> findByPathwayIdAndCompletionRuleIn(@Param("pathwayId") Long pathwayId, @Param("completionRules") List<PathwayElement.CompletionRule> completionRules);
     
     // Find elements by pathway ID and required count range
-    List<PathwayElement> findByPathwayIdAndRequiredCountBetween(Long pathwayId, Integer minCount, Integer maxCount);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.requiredCount BETWEEN :minCount AND :maxCount")
+    List<PathwayElement> findByPathwayIdAndRequiredCountBetween(@Param("pathwayId") Long pathwayId, @Param("minCount") Integer minCount, @Param("maxCount") Integer maxCount);
     
-    // Find elements by pathway ID and optional status
-    List<PathwayElement> findByPathwayIdAndIsOptionalIn(Long pathwayId, List<Boolean> optionalStatuses);
+    // Find elements by pathway ID and optional statuses
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.isOptional IN :optionalStatuses")
+    List<PathwayElement> findByPathwayIdAndIsOptionalIn(@Param("pathwayId") Long pathwayId, @Param("optionalStatuses") List<Boolean> optionalStatuses);
     
-    // Find elements by pathway ID and counts towards parent status
-    List<PathwayElement> findByPathwayIdAndCountsTowardsParentIn(Long pathwayId, List<Boolean> countsTowardsParentStatuses);
+    // Find elements by pathway ID and counts towards parent statuses
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.countsTowardsParent IN :countsTowardsParentStatuses")
+    List<PathwayElement> findByPathwayIdAndCountsTowardsParentIn(@Param("pathwayId") Long pathwayId, @Param("countsTowardsParentStatuses") List<Boolean> countsTowardsParentStatuses);
     
-    // Find elements by pathway ID and short code pattern
-    List<PathwayElement> findByPathwayIdAndShortCodeContainingIgnoreCase(Long pathwayId, String shortCodePattern);
+    // Find elements by pathway ID and short code containing
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND LOWER(pe.shortCode) LIKE LOWER(CONCAT('%', :shortCodePattern, '%'))")
+    List<PathwayElement> findByPathwayIdAndShortCodeContainingIgnoreCase(@Param("pathwayId") Long pathwayId, @Param("shortCodePattern") String shortCodePattern);
     
-    // Find elements by pathway ID and description pattern
-    List<PathwayElement> findByPathwayIdAndDescriptionContainingIgnoreCase(Long pathwayId, String descriptionPattern);
+    // Find elements by pathway ID and description containing
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND LOWER(pe.description) LIKE LOWER(CONCAT('%', :descriptionPattern, '%'))")
+    List<PathwayElement> findByPathwayIdAndDescriptionContainingIgnoreCase(@Param("pathwayId") Long pathwayId, @Param("descriptionPattern") String descriptionPattern);
     
     // Find elements by pathway ID and tag pattern
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.metadata, 'one', :tagPattern, NULL, '$[*]') IS NOT NULL")
+           "JSON_SEARCH(pe.tags, 'one', :tagPattern) IS NOT NULL")
     List<PathwayElement> findByPathwayIdAndTagPattern(@Param("pathwayId") Long pathwayId, @Param("tagPattern") String tagPattern);
     
     // Find elements by pathway ID and competency pattern
@@ -187,16 +209,17 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     
     // Find elements by pathway ID and metadata key pattern
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.metadata, 'one', :keyPattern, NULL, '$[*]') IS NOT NULL")
+           "JSON_EXTRACT(pe.metadata, '$.*') LIKE %:keyPattern%")
     List<PathwayElement> findByPathwayIdAndMetadataKeyPattern(@Param("pathwayId") Long pathwayId, @Param("keyPattern") String keyPattern);
     
     // Find elements by pathway ID and metadata value pattern
     @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.metadata, 'one', :valuePattern, NULL, '$[*]') IS NOT NULL")
+           "JSON_SEARCH(pe.metadata, 'one', :valuePattern) IS NOT NULL")
     List<PathwayElement> findByPathwayIdAndMetadataValuePattern(@Param("pathwayId") Long pathwayId, @Param("valuePattern") String valuePattern);
     
     // Find elements by pathway ID and parent element ID
-    List<PathwayElement> findByPathwayIdAndParentElementId(Long pathwayId, Long parentElementId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND pe.parentElement.id = :parentElementId")
+    List<PathwayElement> findByPathwayIdAndParentElementId(@Param("pathwayId") Long pathwayId, @Param("parentElementId") Long parentElementId);
     
     // Find next order index for pathway
     @Query("SELECT COALESCE(MAX(pe.orderIndex), 0) + 1 FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId")
