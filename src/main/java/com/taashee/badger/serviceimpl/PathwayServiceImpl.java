@@ -475,6 +475,7 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PathwayDTO> getPathwaysForCurrentUser(String userEmail) {
         try {
             // Get user's organization
