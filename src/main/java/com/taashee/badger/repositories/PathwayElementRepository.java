@@ -193,28 +193,28 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     List<PathwayElement> findByPathwayIdAndDescriptionContainingIgnoreCase(@Param("pathwayId") Long pathwayId, @Param("descriptionPattern") String descriptionPattern);
     
     // Find elements by pathway ID and tag pattern
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.tags, 'one', :tagPattern) IS NOT NULL")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.tags::text LIKE %:tagPattern%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndTagPattern(@Param("pathwayId") Long pathwayId, @Param("tagPattern") String tagPattern);
     
     // Find elements by pathway ID and competency pattern
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.competencies, 'one', :competencyPattern) IS NOT NULL")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.competencies::text LIKE %:competencyPattern%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndCompetencyPattern(@Param("pathwayId") Long pathwayId, @Param("competencyPattern") String competencyPattern);
     
     // Find elements by pathway ID and prerequisite pattern
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.prerequisites, 'one', :prerequisitePattern) IS NOT NULL")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.prerequisites::text LIKE %:prerequisitePattern%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndPrerequisitePattern(@Param("pathwayId") Long pathwayId, @Param("prerequisitePattern") String prerequisitePattern);
     
     // Find elements by pathway ID and metadata key pattern
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_EXTRACT(pe.metadata, '$.*') LIKE %:keyPattern%")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.metadata::text LIKE %:keyPattern%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMetadataKeyPattern(@Param("pathwayId") Long pathwayId, @Param("keyPattern") String keyPattern);
     
     // Find elements by pathway ID and metadata value pattern
-    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId AND " +
-           "JSON_SEARCH(pe.metadata, 'one', :valuePattern) IS NOT NULL")
+    @Query(value = "SELECT pe.* FROM pathway_elements pe WHERE pe.pathway_id = :pathwayId AND " +
+           "pe.metadata::text LIKE %:valuePattern%", nativeQuery = true)
     List<PathwayElement> findByPathwayIdAndMetadataValuePattern(@Param("pathwayId") Long pathwayId, @Param("valuePattern") String valuePattern);
     
     // Find elements by pathway ID and parent element ID
