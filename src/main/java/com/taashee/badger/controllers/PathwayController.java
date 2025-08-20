@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class PathwayController {
     // Get all pathways for the current user's organization
     @GetMapping
     @PreAuthorize("hasRole('ISSUER')")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<PathwayDTO>>> getPathwaysForCurrentUser() {
         
         try {
