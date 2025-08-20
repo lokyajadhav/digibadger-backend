@@ -226,5 +226,6 @@ public interface PathwayElementRepository extends JpaRepository<PathwayElement, 
     Integer findNextOrderIndex(@Param("pathwayId") Long pathwayId);
     
     // Find elements by pathway ID ordered by order index
-    List<PathwayElement> findByPathwayIdOrderByOrderIndexAsc(Long pathwayId);
+    @Query("SELECT pe FROM PathwayElement pe WHERE pe.pathway.id = :pathwayId ORDER BY pe.orderIndex ASC")
+    List<PathwayElement> findByPathwayIdOrderByOrderIndexAsc(@Param("pathwayId") Long pathwayId);
 } 
