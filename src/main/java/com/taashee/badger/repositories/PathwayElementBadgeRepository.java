@@ -117,9 +117,8 @@ public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElem
     // Find badges by source and verification notes
     List<PathwayElementBadge> findByBadgeSourceAndVerificationNotesContainingIgnoreCase(String badgeSource, String notes);
     
-    // Find badges by element ID and external badge data
-    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND " +
-           "JSON_SEARCH(peb.externalBadgeData, 'one', :searchTerm) IS NOT NULL")
+    // Find badges by element ID and external badge data (PostgreSQL compatible)
+    @Query(value = "SELECT peb.* FROM pathway_element_badges peb WHERE peb.element_id = :elementId AND peb.external_badge_data::text LIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<PathwayElementBadge> findByElementIdAndExternalBadgeDataSearch(@Param("elementId") Long elementId, @Param("searchTerm") String searchTerm);
     
     // Find badges by badge class ID and external badge data
