@@ -48,16 +48,20 @@ public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElem
 
     
     // Find badges by badge class ID and source
-    List<PathwayElementBadge> findByBadgeClassIdAndBadgeSource(Long badgeClassId, String badgeSource);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.badgeSource = :badgeSource")
+    List<PathwayElementBadge> findByBadgeClassIdAndBadgeSource(@Param("badgeClassId") Long badgeClassId, @Param("badgeSource") String badgeSource);
     
     // Find badges by badge class ID and required status
-    List<PathwayElementBadge> findByBadgeClassIdAndIsRequired(Long badgeClassId, Boolean isRequired);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.isRequired = :isRequired")
+    List<PathwayElementBadge> findByBadgeClassIdAndIsRequired(@Param("badgeClassId") Long badgeClassId, @Param("isRequired") Boolean isRequired);
     
     // Find badges by badge class ID and verification status
-    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNotNull(Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.verifiedBy IS NOT NULL")
+    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNotNull(@Param("badgeClassId") Long badgeClassId);
     
     // Find badges by badge class ID and verification status
-    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNull(Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.verifiedBy IS NULL")
+    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNull(@Param("badgeClassId") Long badgeClassId);
     
     // Find badges by source and required status
     List<PathwayElementBadge> findByBadgeSourceAndIsRequired(String badgeSource, Boolean isRequired);
