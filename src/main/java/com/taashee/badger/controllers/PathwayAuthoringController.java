@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pathway-authoring")
-@CrossOrigin(origins = "*")
 public class PathwayAuthoringController {
 
     @Autowired
