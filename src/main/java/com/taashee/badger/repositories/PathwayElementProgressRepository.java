@@ -112,31 +112,35 @@ public interface PathwayElementProgressRepository extends JpaRepository<PathwayE
     long countByPathwayProgressId(Long pathwayProgressId);
     
     // Count progress by element ID
-    long countByElementId(Long elementId);
+    @Query("SELECT COUNT(pep) FROM PathwayElementProgress pep WHERE pep.element.id = :elementId")
+    long countByElementId(@Param("elementId") Long elementId);
     
     // Find progress by pathway progress ID and completion date range
     List<PathwayElementProgress> findByPathwayProgressIdAndIsCompletedTrueAndCompletedAtBetweenOrderByCompletedAtDesc(
         Long pathwayProgressId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
     
     // Find progress by element ID and completion date range
+    @Query("SELECT pep FROM PathwayElementProgress pep WHERE pep.element.id = :elementId AND pep.isCompleted = true AND pep.completedAt BETWEEN :startDate AND :endDate ORDER BY pep.completedAt DESC")
     List<PathwayElementProgress> findByElementIdAndIsCompletedTrueAndCompletedAtBetweenOrderByCompletedAtDesc(
-        Long elementId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+        @Param("elementId") Long elementId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
     
     // Find progress by pathway progress ID and creation date range
     List<PathwayElementProgress> findByPathwayProgressIdAndCreatedAtBetweenOrderByCreatedAtDesc(
         Long pathwayProgressId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
     
     // Find progress by element ID and creation date range
+    @Query("SELECT pep FROM PathwayElementProgress pep WHERE pep.element.id = :elementId AND pep.createdAt BETWEEN :startDate AND :endDate ORDER BY pep.createdAt DESC")
     List<PathwayElementProgress> findByElementIdAndCreatedAtBetweenOrderByCreatedAtDesc(
-        Long elementId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+        @Param("elementId") Long elementId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
     
     // Find progress by pathway progress ID and update date range
     List<PathwayElementProgress> findByPathwayProgressIdAndUpdatedAtBetweenOrderByUpdatedAtDesc(
         Long pathwayProgressId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
     
     // Find progress by element ID and update date range
+    @Query("SELECT pep FROM PathwayElementProgress pep WHERE pep.element.id = :elementId AND pep.updatedAt BETWEEN :startDate AND :endDate ORDER BY pep.updatedAt DESC")
     List<PathwayElementProgress> findByElementIdAndUpdatedAtBetweenOrderByUpdatedAtDesc(
-        Long elementId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+        @Param("elementId") Long elementId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
     
     // Find progress by pathway progress ID and completed badges
     @Query("SELECT pep FROM PathwayElementProgress pep WHERE pep.pathwayProgress.id = :pathwayProgressId AND " +
