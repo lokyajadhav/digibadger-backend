@@ -13,16 +13,20 @@ import java.util.Optional;
 public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElementBadge, Long> {
     
     // Find badges by element ID
-    List<PathwayElementBadge> findByElementId(Long elementId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId")
+    List<PathwayElementBadge> findByElementId(@Param("elementId") Long elementId);
     
     // Find required badges by element ID
-    List<PathwayElementBadge> findByElementIdAndIsRequiredTrue(Long elementId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = true")
+    List<PathwayElementBadge> findByElementIdAndIsRequiredTrue(@Param("elementId") Long elementId);
     
     // Find optional badges by element ID
-    List<PathwayElementBadge> findByElementIdAndIsRequiredFalse(Long elementId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = false")
+    List<PathwayElementBadge> findByElementIdAndIsRequiredFalse(@Param("elementId") Long elementId);
     
     // Find badges by badge class ID
-    List<PathwayElementBadge> findByBadgeClassId(Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId")
+    List<PathwayElementBadge> findByBadgeClassId(@Param("badgeClassId") Long badgeClassId);
     
     // Find badges by source
     List<PathwayElementBadge> findByBadgeSource(String badgeSource);
