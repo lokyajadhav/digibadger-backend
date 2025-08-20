@@ -121,9 +121,8 @@ public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElem
     @Query(value = "SELECT peb.* FROM pathway_element_badges peb WHERE peb.element_id = :elementId AND peb.external_badge_data::text LIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<PathwayElementBadge> findByElementIdAndExternalBadgeDataSearch(@Param("elementId") Long elementId, @Param("searchTerm") String searchTerm);
     
-    // Find badges by badge class ID and external badge data
-    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND " +
-           "JSON_SEARCH(peb.externalBadgeData, 'one', :searchTerm) IS NOT NULL")
+    // Find badges by badge class ID and external badge data (PostgreSQL compatible)
+    @Query(value = "SELECT peb.* FROM pathway_element_badges peb WHERE peb.badge_class_id = :badgeClassId AND peb.external_badge_data::text LIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<PathwayElementBadge> findByBadgeClassIdAndExternalBadgeDataSearch(@Param("badgeClassId") Long badgeClassId, @Param("searchTerm") String searchTerm);
     
     // Find badges by source and external badge data
