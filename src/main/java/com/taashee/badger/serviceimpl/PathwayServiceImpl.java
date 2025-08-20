@@ -464,19 +464,31 @@ public class PathwayServiceImpl implements PathwayService {
 
     @Override
     public List<PathwayDTO> getPathwaysForCurrentUser(String userEmail) {
-        // Get user's organization
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        
-        List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
-        if (staffList.isEmpty()) {
-            return List.of(); // Return empty list if no organization
+        try {
+            // Get user's organization
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            
+            List<OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
+            if (staffList.isEmpty()) {
+                return List.of(); // Return empty list if no organization
+            }
+            
+            // For now, use the first organization. In the future, you might want to return all organizations
+            Organization organization = staffList.get(0).getOrganization();
+            
+            // Add logging to debug the issue
+            System.out.println("Fetching pathways for organization: " + organization.getId());
+            
+            List<PathwayDTO> pathways = getPathwaysByOrganization(organization.getId());
+            System.out.println("Successfully fetched " + pathways.size() + " pathways");
+            
+            return pathways;
+        } catch (Exception e) {
+            System.err.println("Error in getPathwaysForCurrentUser: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to retrieve pathways: " + e.getMessage(), e);
         }
-        
-        // For now, use the first organization. In the future, you might want to return all organizations
-        Organization organization = staffList.get(0).getOrganization();
-        
-        return getPathwaysByOrganization(organization.getId());
     }
 
     @Override
