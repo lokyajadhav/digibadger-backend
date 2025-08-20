@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/pathway-enrollments")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/pathway-enrollment")
 public class PathwayEnrollmentController {
 
     @Autowired
