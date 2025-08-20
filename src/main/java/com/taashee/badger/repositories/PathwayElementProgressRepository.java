@@ -101,7 +101,8 @@ public interface PathwayElementProgressRepository extends JpaRepository<PathwayE
     long countByPathwayProgressIdAndIsCompletedFalse(Long pathwayProgressId);
     
     // Count completed progress by element ID
-    long countByElementIdAndIsCompletedTrue(Long elementId);
+    @Query("SELECT COUNT(pep) FROM PathwayElementProgress pep WHERE pep.element.id = :elementId AND pep.isCompleted = true")
+    long countByElementIdAndIsCompletedTrue(@Param("elementId") Long elementId);
     
     // Count incomplete progress by element ID
     long countByElementIdAndIsCompletedFalse(Long elementId);
