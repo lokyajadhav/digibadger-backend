@@ -98,7 +98,7 @@ public interface PathwayRepository extends JpaRepository<Pathway, Long> {
     List<Object[]> getPathwayStatisticsByOrganization(@Param("organizationId") Long organizationId);
     
     // Find pathways by tags in an organization
-    @Query("SELECT p FROM Pathway p WHERE p.organization.id = :organizationId AND :tag MEMBER OF p.tags")
+    @Query("SELECT p FROM Pathway p WHERE p.organization.id = :organizationId AND p.tags::text LIKE %:tag%")
     List<Pathway> findByOrganizationIdAndTagsContaining(@Param("organizationId") Long organizationId, @Param("tag") String tag);
     
     // Find pathways by difficulty level in an organization
