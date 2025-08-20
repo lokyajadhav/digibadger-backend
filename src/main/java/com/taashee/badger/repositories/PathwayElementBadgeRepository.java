@@ -38,10 +38,12 @@ public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElem
     List<PathwayElementBadge> findByVerifiedByIsNull();
     
     // Find badges by element ID and source
-    List<PathwayElementBadge> findByElementIdAndBadgeSource(Long elementId, String badgeSource);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.badgeSource = :badgeSource")
+    List<PathwayElementBadge> findByElementIdAndBadgeSource(@Param("elementId") Long elementId, @Param("badgeSource") String badgeSource);
     
     // Find badges by element ID and required status
-    List<PathwayElementBadge> findByElementIdAndIsRequired(Long elementId, Boolean isRequired);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = :isRequired")
+    List<PathwayElementBadge> findByElementIdAndIsRequired(@Param("elementId") Long elementId, @Param("isRequired") Boolean isRequired);
     
 
     
