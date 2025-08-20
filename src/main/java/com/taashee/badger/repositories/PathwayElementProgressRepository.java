@@ -51,8 +51,9 @@ public interface PathwayElementProgressRepository extends JpaRepository<PathwayE
         Long pathwayProgressId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
     
     // Find progress by element ID and creation date range
+    @Query("SELECT pep FROM PathwayElementProgress pep WHERE pep.element.id = :elementId AND pep.createdAt BETWEEN :startDate AND :endDate")
     List<PathwayElementProgress> findByElementIdAndCreatedAtBetween(
-        Long elementId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+        @Param("elementId") Long elementId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
     
     // Find progress by pathway progress ID and update date range
     List<PathwayElementProgress> findByPathwayProgressIdAndUpdatedAtBetween(
