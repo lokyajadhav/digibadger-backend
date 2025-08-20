@@ -16,7 +16,8 @@ public interface PathwayElementProgressRepository extends JpaRepository<PathwayE
     List<PathwayElementProgress> findByPathwayProgressId(Long pathwayProgressId);
     
     // Find progress by element ID
-    List<PathwayElementProgress> findByElementId(Long elementId);
+    @Query("SELECT pep FROM PathwayElementProgress pep WHERE pep.element.id = :elementId")
+    List<PathwayElementProgress> findByElementId(@Param("elementId") Long elementId);
     
     // Find completed progress by pathway progress ID
     List<PathwayElementProgress> findByPathwayProgressIdAndIsCompletedTrue(Long pathwayProgressId);
