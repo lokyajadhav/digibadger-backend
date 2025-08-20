@@ -76,6 +76,7 @@ C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badg
 C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\Institution.java
 C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\serviceimpl\UserServiceImpl.java
 C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\controllers\OrganizationStaffController.java
+C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\configs\CorsConfig.java
 C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\PasswordResetTokenRepository.java
 C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\controllers\PathwayEnrollmentController.java
 C:\Users\taashee\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\BadgeInstanceCollectionRepository.java
