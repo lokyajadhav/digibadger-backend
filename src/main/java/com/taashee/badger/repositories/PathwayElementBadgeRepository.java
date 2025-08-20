@@ -13,16 +13,20 @@ import java.util.Optional;
 public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElementBadge, Long> {
     
     // Find badges by element ID
-    List<PathwayElementBadge> findByElementId(Long elementId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId")
+    List<PathwayElementBadge> findByElementId(@Param("elementId") Long elementId);
     
     // Find required badges by element ID
-    List<PathwayElementBadge> findByElementIdAndIsRequiredTrue(Long elementId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = true")
+    List<PathwayElementBadge> findByElementIdAndIsRequiredTrue(@Param("elementId") Long elementId);
     
     // Find optional badges by element ID
-    List<PathwayElementBadge> findByElementIdAndIsRequiredFalse(Long elementId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = false")
+    List<PathwayElementBadge> findByElementIdAndIsRequiredFalse(@Param("elementId") Long elementId);
     
     // Find badges by badge class ID
-    List<PathwayElementBadge> findByBadgeClassId(Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId")
+    List<PathwayElementBadge> findByBadgeClassId(@Param("badgeClassId") Long badgeClassId);
     
     // Find badges by source
     List<PathwayElementBadge> findByBadgeSource(String badgeSource);
@@ -34,24 +38,30 @@ public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElem
     List<PathwayElementBadge> findByVerifiedByIsNull();
     
     // Find badges by element ID and source
-    List<PathwayElementBadge> findByElementIdAndBadgeSource(Long elementId, String badgeSource);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.badgeSource = :badgeSource")
+    List<PathwayElementBadge> findByElementIdAndBadgeSource(@Param("elementId") Long elementId, @Param("badgeSource") String badgeSource);
     
     // Find badges by element ID and required status
-    List<PathwayElementBadge> findByElementIdAndIsRequired(Long elementId, Boolean isRequired);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = :isRequired")
+    List<PathwayElementBadge> findByElementIdAndIsRequired(@Param("elementId") Long elementId, @Param("isRequired") Boolean isRequired);
     
 
     
     // Find badges by badge class ID and source
-    List<PathwayElementBadge> findByBadgeClassIdAndBadgeSource(Long badgeClassId, String badgeSource);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.badgeSource = :badgeSource")
+    List<PathwayElementBadge> findByBadgeClassIdAndBadgeSource(@Param("badgeClassId") Long badgeClassId, @Param("badgeSource") String badgeSource);
     
     // Find badges by badge class ID and required status
-    List<PathwayElementBadge> findByBadgeClassIdAndIsRequired(Long badgeClassId, Boolean isRequired);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.isRequired = :isRequired")
+    List<PathwayElementBadge> findByBadgeClassIdAndIsRequired(@Param("badgeClassId") Long badgeClassId, @Param("isRequired") Boolean isRequired);
     
     // Find badges by badge class ID and verification status
-    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNotNull(Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.verifiedBy IS NOT NULL")
+    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNotNull(@Param("badgeClassId") Long badgeClassId);
     
     // Find badges by badge class ID and verification status
-    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNull(Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.badgeClass.id = :badgeClassId AND peb.verifiedBy IS NULL")
+    List<PathwayElementBadge> findByBadgeClassIdAndVerifiedByIsNull(@Param("badgeClassId") Long badgeClassId);
     
     // Find badges by source and required status
     List<PathwayElementBadge> findByBadgeSourceAndIsRequired(String badgeSource, Boolean isRequired);
@@ -187,19 +197,23 @@ public interface PathwayElementBadgeRepository extends JpaRepository<PathwayElem
     // === ADDITIONAL METHODS FOR SERVICE IMPLEMENTATION ===
     
     // Find badge by element ID and badge class ID
-    Optional<PathwayElementBadge> findByElementIdAndBadgeClassId(Long elementId, Long badgeClassId);
+    @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.badgeClass.id = :badgeClassId")
+    Optional<PathwayElementBadge> findByElementIdAndBadgeClassId(@Param("elementId") Long elementId, @Param("badgeClassId") Long badgeClassId);
     
     // Check if badge exists by element ID and badge class ID
-    boolean existsByElementIdAndBadgeClassId(Long elementId, Long badgeClassId);
+    @Query("SELECT COUNT(peb) > 0 FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.badgeClass.id = :badgeClassId")
+    boolean existsByElementIdAndBadgeClassId(@Param("elementId") Long elementId, @Param("badgeClassId") Long badgeClassId);
     
     // Delete badge by element ID and badge class ID
-    void deleteByElementIdAndBadgeClassId(Long elementId, Long badgeClassId);
+    @Query("DELETE FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.badgeClass.id = :badgeClassId")
+    void deleteByElementIdAndBadgeClassId(@Param("elementId") Long elementId, @Param("badgeClassId") Long badgeClassId);
     
     // Find badges by pathway ID
     @Query("SELECT peb FROM PathwayElementBadge peb WHERE peb.element.pathway.id = :pathwayId")
     List<PathwayElementBadge> findByPathwayId(@Param("pathwayId") Long pathwayId);
     
     // Count required badges by element ID
-    long countByElementIdAndIsRequiredTrue(Long elementId);
+    @Query("SELECT COUNT(peb) FROM PathwayElementBadge peb WHERE peb.element.id = :elementId AND peb.isRequired = true")
+    long countByElementIdAndIsRequiredTrue(@Param("elementId") Long elementId);
     
 } 
