@@ -126,6 +126,7 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
+    @Transactional
     public PathwayDTO updatePathway(Long pathwayId, PathwayDTO pathwayDTO, Long organizationId) {
         Pathway pathway = pathwayRepository.findById(pathwayId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
