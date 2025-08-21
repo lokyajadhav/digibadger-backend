@@ -230,6 +230,7 @@ public class PathwayServiceImpl implements PathwayService {
     // === ENTERPRISE-GRADE PUBLISHING FUNCTIONALITY ===
 
     @Override
+    @Transactional
     public PathwayDTO publishPathway(Long pathwayId, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
