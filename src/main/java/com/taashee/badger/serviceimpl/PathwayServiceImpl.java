@@ -148,6 +148,7 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
+    @Transactional
     public void deletePathway(Long pathwayId, Long organizationId) {
         Pathway pathway = pathwayRepository.findById(pathwayId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pathway not found"));
