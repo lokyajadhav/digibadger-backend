@@ -51,6 +51,7 @@ public class PathwayServiceImpl implements PathwayService {
     private OrganizationStaffRepository organizationStaffRepository;
 
     @Override
+    @Transactional
     public PathwayDTO createPathway(PathwayDTO pathwayDTO, Long organizationId) {
         // Get current user from security context (for backward compatibility)
         String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
