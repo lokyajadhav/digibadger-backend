@@ -40,7 +40,6 @@ public class PathwayController {
     // Get all pathways for the current user's organization
     @GetMapping
     @PreAuthorize("hasRole('ISSUER')")
-    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<PathwayDTO>>> getPathwaysForCurrentUser() {
         
         try {
