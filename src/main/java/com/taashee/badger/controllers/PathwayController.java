@@ -43,10 +43,21 @@ public class PathwayController {
     public ResponseEntity<ApiResponse<List<PathwayDTO>>> getPathwaysForCurrentUser() {
         
         try {
+            // Debug: Check authentication context
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("Authentication object: " + auth);
+            System.out.println("Principal: " + (auth != null ? auth.getPrincipal() : "null"));
+            System.out.println("Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
+            System.out.println("Is authenticated: " + (auth != null ? auth.isAuthenticated() : "null"));
+            
             String userEmail = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            System.out.println("User email from security context: " + userEmail);
+            
             List<PathwayDTO> pathways = pathwayService.getPathwaysForCurrentUser(userEmail);
             return ResponseEntity.ok(new ApiResponse<>(200, "Pathways retrieved successfully", pathways, null));
         } catch (Exception e) {
+            System.err.println("Error in getPathwaysForCurrentUser: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(400, "Failed to retrieve pathways", null, e.getMessage()));
         }
