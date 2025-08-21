@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 import java.util.ArrayList;
 
 @Service
-@Transactional
 public class PathwayServiceImpl implements PathwayService {
 
     @Autowired
