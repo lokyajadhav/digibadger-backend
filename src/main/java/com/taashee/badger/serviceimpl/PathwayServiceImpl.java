@@ -257,6 +257,7 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
+    @Transactional
     public PathwayDTO unpublishPathway(Long pathwayId, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
