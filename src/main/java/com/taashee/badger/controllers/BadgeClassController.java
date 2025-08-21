@@ -284,6 +284,8 @@ public class BadgeClassController {
         try {
             // Debug logging
             System.out.println("Archive request received for badge class ID: " + id);
+
+            System.out.println("Archive request received for badge class ID: " + id);
             System.out.println("Archive request body: " + archiveRequest);
             
             Boolean archive = null;
