@@ -13,6 +13,8 @@ import com.taashee.badger.repositories.AuditLogRepository;
 import com.taashee.badger.services.PathwayService;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +72,9 @@ public class PathwayServiceImpl implements PathwayService {
         if (parentStepId != null) {
             PathwayStep parent = stepRepository.findById(parentStepId).orElseThrow();
             step.setParentStep(parent);
+            
+            // DAG Validation: Prevent cycles
+            validateNoCycles(step, pathway);
         }
         step.setName(name);
         step.setDescription(description);
@@ -77,7 +82,53 @@ public class PathwayServiceImpl implements PathwayService {
         step.setOptionalStep(optionalStep);
         step.setMilestone(milestone);
         step.setOrderIndex(stepRepository.findByPathwayOrderByOrderIndexAsc(pathway).size());
+        
+        // DAG Validation: Validate order index
+        validateOrderIndex(step, pathway);
+        
         return stepRepository.save(step);
+    }
+    
+    /**
+     * DAG Validation: Prevent cycles in pathway structure
+     */
+    private void validateNoCycles(PathwayStep newStep, Pathway pathway) {
+        if (newStep.getParentStep() == null) return;
+        
+        // Check if adding this step would create a cycle
+        PathwayStep current = newStep.getParentStep();
+        while (current != null) {
+            if (current.getId().equals(newStep.getId())) {
+                throw new IllegalArgumentException("Cycle detected: Cannot create step that would form a circular dependency");
+            }
+            current = current.getParentStep();
+        }
+    }
+    
+    /**
+     * DAG Validation: Validate order index consistency
+     */
+    private void validateOrderIndex(PathwayStep newStep, Pathway pathway) {
+        List<PathwayStep> existingSteps = stepRepository.findByPathwayOrderByOrderIndexAsc(pathway);
+        
+        // Check for duplicate order indexes
+        Set<Integer> usedIndexes = existingSteps.stream()
+            .map(PathwayStep::getOrderIndex)
+            .collect(Collectors.toSet());
+            
+        if (usedIndexes.contains(newStep.getOrderIndex())) {
+            // Auto-adjust order index to avoid conflicts
+            int maxIndex = existingSteps.stream()
+                .mapToInt(PathwayStep::getOrderIndex)
+                .max()
+                .orElse(-1);
+            newStep.setOrderIndex(maxIndex + 1);
+        }
+        
+        // Ensure order index is not negative
+        if (newStep.getOrderIndex() < 0) {
+            newStep.setOrderIndex(0);
+        }
     }
 
     @Override
