@@ -1,0 +1,72 @@
+package com.taashee.badger.models;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.taashee.badger.models.Organization;
+import com.taashee.badger.models.PathwayStep;
+import com.taashee.badger.models.PathwayStatus;
+
+@Entity
+public class Pathway {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    @JsonBackReference
+    private Organization organization;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    private PathwayStatus status = PathwayStatus.DRAFT;
+
+    private Long currentDraftVersionId;
+
+    private Long completionBadgeId; // BadgeClass.id
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "pathway", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    @JsonManagedReference
+    private List<PathwayStep> steps = new ArrayList<>();
+
+    public Long getId() { return id; }
+    public Organization getOrganization() { return organization; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public PathwayStatus getStatus() { return status; }
+    public Long getCurrentDraftVersionId() { return currentDraftVersionId; }
+    public Long getCompletionBadgeId() { return completionBadgeId; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public List<PathwayStep> getSteps() { return steps; }
+
+    public void setId(Long id) { this.id = id; }
+    public void setOrganization(Organization organization) { this.organization = organization; }
+    public void setName(String name) { this.name = name; }
+    public void setDescription(String description) { this.description = description; }
+    public void setStatus(PathwayStatus status) { this.status = status; }
+    public void setCurrentDraftVersionId(Long currentDraftVersionId) { this.currentDraftVersionId = currentDraftVersionId; }
+    public void setCompletionBadgeId(Long completionBadgeId) { this.completionBadgeId = completionBadgeId; }
+    public void setSteps(List<PathwayStep> steps) { this.steps = steps; }
+}
+
+
