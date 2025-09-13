@@ -18,8 +18,13 @@ public interface PathwayService {
     List<PathwayStep> listSteps(Long pathwayId);
     PathwayStep getStep(Long stepId);
     PathwayStep updateStep(Long pathwayId, Long stepId, String name, String description, String shortCode, String alignmentUrl, String targetCode, String frameworkName, Boolean optional);
+    PathwayStep updateStepAchievement(Long pathwayId, Long stepId, Long achievementBadgeId, Boolean achievementExternal);
     void deleteStep(Long pathwayId, Long stepId);
     PathwayStep rearrangeStep(Long pathwayId, Long stepId, Long newParentId, Integer newOrderIndex);
+    
+    // Pathway configuration methods
+    Pathway updatePathwayConfiguration(Long pathwayId, String shortCode, String alignmentUrl, String targetCode, String frameworkName, 
+                                    Long completionBadgeId, Boolean completionBadgeExternal, String prerequisiteRule, String prerequisiteSteps);
     
     // Version management
     PathwayVersion createVersion(Long pathwayId);

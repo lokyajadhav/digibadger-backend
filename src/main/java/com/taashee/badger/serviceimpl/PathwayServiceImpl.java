@@ -188,6 +188,20 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
+    @Transactional
+    public PathwayStep updateStepAchievement(Long pathwayId, Long stepId, Long achievementBadgeId, Boolean achievementExternal) {
+        PathwayStep step = stepRepository.findById(stepId).orElseThrow();
+        // Validate that the step belongs to the specified pathway
+        if (!step.getPathway().getId().equals(pathwayId)) {
+            throw new IllegalArgumentException("Step does not belong to the specified pathway");
+        }
+        // Always update these fields, allowing null values to clear them
+        step.setAchievementBadgeId(achievementBadgeId);
+        step.setAchievementExternal(achievementExternal);
+        return stepRepository.save(step);
+    }
+
+    @Override
     public Pathway getPathway(Long pathwayId) {
         return pathwayRepository.findById(pathwayId).orElseThrow();
     }
@@ -198,6 +212,23 @@ public class PathwayServiceImpl implements PathwayService {
         Pathway pathway = pathwayRepository.findById(pathwayId).orElseThrow();
         if (name != null) pathway.setName(name);
         if (description != null) pathway.setDescription(description);
+        return pathwayRepository.save(pathway);
+    }
+
+    @Override
+    @Transactional
+    public Pathway updatePathwayConfiguration(Long pathwayId, String shortCode, String alignmentUrl, String targetCode, String frameworkName, 
+                                            Long completionBadgeId, Boolean completionBadgeExternal, String prerequisiteRule, String prerequisiteSteps) {
+        Pathway pathway = pathwayRepository.findById(pathwayId).orElseThrow();
+        // Always update these fields, allowing null values to clear them
+        pathway.setShortCode(shortCode);
+        pathway.setAlignmentUrl(alignmentUrl);
+        pathway.setTargetCode(targetCode);
+        pathway.setFrameworkName(frameworkName);
+        pathway.setCompletionBadgeId(completionBadgeId);
+        pathway.setCompletionBadgeExternal(completionBadgeExternal);
+        pathway.setPrerequisiteRule(prerequisiteRule);
+        pathway.setPrerequisiteSteps(prerequisiteSteps);
         return pathwayRepository.save(pathway);
     }
 

@@ -36,6 +36,20 @@ public class Pathway {
 
     private Long completionBadgeId; // BadgeClass.id
 
+    private String shortCode;
+
+    // Alignment Data fields
+    private String alignmentUrl;
+    private String targetCode;
+    private String frameworkName;
+
+    // Completion Badge Configuration
+    private Boolean completionBadgeExternal = false;
+
+    // Prerequisite Configuration
+    private String prerequisiteRule = "all"; // "all", "any", "n-of-m"
+    private String prerequisiteSteps; // JSON array of step IDs
+
     @Column(updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -55,6 +69,13 @@ public class Pathway {
     public PathwayStatus getStatus() { return status; }
     public Long getCurrentDraftVersionId() { return currentDraftVersionId; }
     public Long getCompletionBadgeId() { return completionBadgeId; }
+    public String getShortCode() { return shortCode; }
+    public String getAlignmentUrl() { return alignmentUrl; }
+    public String getTargetCode() { return targetCode; }
+    public String getFrameworkName() { return frameworkName; }
+    public Boolean getCompletionBadgeExternal() { return completionBadgeExternal; }
+    public String getPrerequisiteRule() { return prerequisiteRule; }
+    public String getPrerequisiteSteps() { return prerequisiteSteps; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public List<PathwayStep> getSteps() { return steps; }
@@ -66,6 +87,13 @@ public class Pathway {
     public void setStatus(PathwayStatus status) { this.status = status; }
     public void setCurrentDraftVersionId(Long currentDraftVersionId) { this.currentDraftVersionId = currentDraftVersionId; }
     public void setCompletionBadgeId(Long completionBadgeId) { this.completionBadgeId = completionBadgeId; }
+    public void setShortCode(String shortCode) { this.shortCode = shortCode; }
+    public void setAlignmentUrl(String alignmentUrl) { this.alignmentUrl = alignmentUrl; }
+    public void setTargetCode(String targetCode) { this.targetCode = targetCode; }
+    public void setFrameworkName(String frameworkName) { this.frameworkName = frameworkName; }
+    public void setCompletionBadgeExternal(Boolean completionBadgeExternal) { this.completionBadgeExternal = completionBadgeExternal; }
+    public void setPrerequisiteRule(String prerequisiteRule) { this.prerequisiteRule = prerequisiteRule; }
+    public void setPrerequisiteSteps(String prerequisiteSteps) { this.prerequisiteSteps = prerequisiteSteps; }
     public void setSteps(List<PathwayStep> steps) { this.steps = steps; }
 }
 

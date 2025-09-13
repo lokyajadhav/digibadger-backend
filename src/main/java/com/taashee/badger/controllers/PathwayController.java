@@ -45,6 +45,32 @@ public class PathwayController {
         return pathwayService.updatePathway(pathwayId, body.name(), body.description());
     }
 
+    public static record PathwayConfigurationRequest(
+        String shortCode, 
+        String alignmentUrl, 
+        String targetCode, 
+        String frameworkName,
+        Long completionBadgeId,
+        Boolean completionBadgeExternal,
+        String prerequisiteRule,
+        String prerequisiteSteps
+    ) {}
+
+    @PutMapping("/{pathwayId}/configuration")
+    public Pathway updatePathwayConfiguration(@PathVariable Long orgId, @PathVariable Long pathwayId, @RequestBody PathwayConfigurationRequest body) {
+        return pathwayService.updatePathwayConfiguration(
+            pathwayId, 
+            body.shortCode(), 
+            body.alignmentUrl(), 
+            body.targetCode(), 
+            body.frameworkName(),
+            body.completionBadgeId(),
+            body.completionBadgeExternal(),
+            body.prerequisiteRule(),
+            body.prerequisiteSteps()
+        );
+    }
+
     @DeleteMapping("/{pathwayId}")
     public void deletePathway(@PathVariable Long orgId, @PathVariable Long pathwayId) {
         pathwayService.deletePathway(pathwayId);
@@ -64,11 +90,13 @@ public class PathwayController {
             s.getShortCode(),
             s.isOptionalStep(),
             s.getOrderIndex(), 
-            s.isMilestone()
+            s.isMilestone(),
+            s.getAchievementBadgeId(),
+            s.getAchievementExternal()
         );
     }
 
-    public static record StepDto(Long id, Long parentStepId, String name, String description, String shortCode, boolean optionalStep, int orderIndex, boolean milestone) {}
+    public static record StepDto(Long id, Long parentStepId, String name, String description, String shortCode, boolean optionalStep, int orderIndex, boolean milestone, Long achievementBadgeId, Boolean achievementExternal) {}
 
     @GetMapping("/{pathwayId}/steps")
     public List<StepDto> listSteps(@PathVariable Long orgId, @PathVariable Long pathwayId) {
@@ -83,7 +111,9 @@ public class PathwayController {
                 s.getShortCode(),
                 s.isOptionalStep(),
                 s.getOrderIndex(), 
-                s.isMilestone()
+                s.isMilestone(),
+                s.getAchievementBadgeId(),
+                s.getAchievementExternal()
             ))
             .collect(Collectors.toList());
     }
@@ -101,7 +131,9 @@ public class PathwayController {
             s.getShortCode(),
             s.isOptionalStep(),
             s.getOrderIndex(), 
-            s.isMilestone()
+            s.isMilestone(),
+            s.getAchievementBadgeId(),
+            s.getAchievementExternal()
         );
     }
 
@@ -118,7 +150,28 @@ public class PathwayController {
             s.getShortCode(),
             s.isOptionalStep(),
             s.getOrderIndex(), 
-            s.isMilestone()
+            s.isMilestone(),
+            s.getAchievementBadgeId(),
+            s.getAchievementExternal()
+        );
+    }
+
+    public static record UpdateStepAchievementRequest(Long achievementBadgeId, Boolean achievementExternal) {}
+
+    @PutMapping("/steps/{stepId}/achievement")
+    public StepDto updateStepAchievement(@PathVariable Long orgId, @PathVariable Long pathwayId, @PathVariable Long stepId, @RequestBody UpdateStepAchievementRequest body) {
+        var s = pathwayService.updateStepAchievement(pathwayId, stepId, body.achievementBadgeId(), body.achievementExternal());
+        return new StepDto(
+            s.getId(), 
+            s.getParentStep() != null ? s.getParentStep().getId() : null, 
+            s.getName(), 
+            s.getDescription(),
+            s.getShortCode(),
+            s.isOptionalStep(),
+            s.getOrderIndex(), 
+            s.isMilestone(),
+            s.getAchievementBadgeId(),
+            s.getAchievementExternal()
         );
     }
 

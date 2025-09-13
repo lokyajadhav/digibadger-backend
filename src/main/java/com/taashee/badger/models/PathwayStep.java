@@ -48,6 +48,10 @@ public class PathwayStep {
 
     private boolean milestone = false; // end of pathway node
 
+    // Achievement Configuration
+    private Long achievementBadgeId; // BadgeClass.id for achievement
+    private Boolean achievementExternal = false;
+
     @OneToMany(mappedBy = "step", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StepRequirement> requirements = new ArrayList<>();
 
@@ -73,6 +77,8 @@ public class PathwayStep {
     public String getTargetCode() { return targetCode; }
     public String getFrameworkName() { return frameworkName; }
     public boolean isMilestone() { return milestone; }
+    public Long getAchievementBadgeId() { return achievementBadgeId; }
+    public Boolean getAchievementExternal() { return achievementExternal; }
     public List<StepRequirement> getRequirements() { return requirements; }
     public List<StepPrerequisite> getPrerequisites() { return prerequisites; }
 
@@ -88,6 +94,8 @@ public class PathwayStep {
     public void setTargetCode(String targetCode) { this.targetCode = targetCode; }
     public void setFrameworkName(String frameworkName) { this.frameworkName = frameworkName; }
     public void setMilestone(boolean milestone) { this.milestone = milestone; }
+    public void setAchievementBadgeId(Long achievementBadgeId) { this.achievementBadgeId = achievementBadgeId; }
+    public void setAchievementExternal(Boolean achievementExternal) { this.achievementExternal = achievementExternal; }
     public void setRequirements(List<StepRequirement> requirements) { this.requirements = requirements; }
     public void setPrerequisites(List<StepPrerequisite> prerequisites) { this.prerequisites = prerequisites; }
 }
