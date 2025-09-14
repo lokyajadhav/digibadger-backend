@@ -6,6 +6,8 @@ import com.taashee.badger.models.PathwayVersion;
 import com.taashee.badger.models.Organization;
 import com.taashee.badger.models.User;
 import com.taashee.badger.models.AuditLog;
+import com.taashee.badger.models.StepRequirement;
+import com.taashee.badger.models.StepRequirementType;
 import com.taashee.badger.repositories.PathwayRepository;
 import com.taashee.badger.repositories.PathwayStepRepository;
 import com.taashee.badger.repositories.PathwayVersionRepository;
@@ -171,7 +173,7 @@ public class PathwayServiceImpl implements PathwayService {
 
     @Override
     @Transactional
-    public PathwayStep updateStep(Long pathwayId, Long stepId, String name, String description, String shortCode, String alignmentUrl, String targetCode, String frameworkName, Boolean optional) {
+    public PathwayStep updateStep(Long pathwayId, Long stepId, String name, String description, String shortCode, String alignmentUrl, String targetCode, String frameworkName, Boolean optional, String prerequisiteRule, String prerequisiteSteps) {
         PathwayStep step = stepRepository.findById(stepId).orElseThrow();
         // Validate that the step belongs to the specified pathway
         if (!step.getPathway().getId().equals(pathwayId)) {
@@ -184,6 +186,8 @@ public class PathwayServiceImpl implements PathwayService {
         if (targetCode != null) step.setTargetCode(targetCode);
         if (frameworkName != null) step.setFrameworkName(frameworkName);
         if (optional != null) step.setOptionalStep(optional);
+        if (prerequisiteRule != null) step.setPrerequisiteRule(prerequisiteRule);
+        if (prerequisiteSteps != null) step.setPrerequisiteSteps(prerequisiteSteps);
         return stepRepository.save(step);
     }
 
@@ -240,8 +244,13 @@ public class PathwayServiceImpl implements PathwayService {
     }
 
     @Override
-    public PathwayStep getStep(Long stepId) {
-        return stepRepository.findById(stepId).orElseThrow();
+    public PathwayStep getStep(Long pathwayId, Long stepId) {
+        PathwayStep step = stepRepository.findById(stepId).orElseThrow();
+        // Validate that the step belongs to the specified pathway
+        if (!step.getPathway().getId().equals(pathwayId)) {
+            throw new IllegalArgumentException("Step does not belong to the specified pathway");
+        }
+        return step;
     }
 
     @Override
@@ -289,6 +298,72 @@ public class PathwayServiceImpl implements PathwayService {
         log.setEntityId(entityId);
         log.setDetails(details);
         auditRepository.save(log);
+    }
+
+    // Step Requirements Management
+    @Override
+    @Transactional
+    public StepRequirement createStepRequirement(Long pathwayId, Long stepId, String type, Long badgeClassId, String thirdPartyUrl, String thirdPartyJson, String experienceName, String experienceDescription, String groupKey) {
+        Pathway pathway = pathwayRepository.findById(pathwayId).orElseThrow(() -> new RuntimeException("Pathway not found"));
+        PathwayStep step = stepRepository.findById(stepId).orElseThrow(() -> new RuntimeException("Step not found"));
+        
+        // Verify the step belongs to the pathway
+        if (!step.getPathway().getId().equals(pathwayId)) {
+            throw new RuntimeException("Step does not belong to the specified pathway");
+        }
+        
+        StepRequirement requirement = new StepRequirement();
+        requirement.setStep(step);
+        requirement.setType(StepRequirementType.valueOf(type));
+        requirement.setBadgeClassId(badgeClassId);
+        requirement.setThirdPartyUrl(thirdPartyUrl);
+        requirement.setThirdPartyJson(thirdPartyJson);
+        requirement.setExperienceName(experienceName);
+        requirement.setExperienceDescription(experienceDescription);
+        requirement.setGroupKey(groupKey);
+        
+        return step.getRequirements().add(requirement) ? requirement : null;
+    }
+
+    @Override
+    @Transactional
+    public StepRequirement updateStepRequirement(Long pathwayId, Long stepId, Long requirementId, String type, Long badgeClassId, String thirdPartyUrl, String thirdPartyJson, String experienceName, String experienceDescription, String groupKey) {
+        Pathway pathway = pathwayRepository.findById(pathwayId).orElseThrow(() -> new RuntimeException("Pathway not found"));
+        PathwayStep step = stepRepository.findById(stepId).orElseThrow(() -> new RuntimeException("Step not found"));
+        
+        // Verify the step belongs to the pathway
+        if (!step.getPathway().getId().equals(pathwayId)) {
+            throw new RuntimeException("Step does not belong to the specified pathway");
+        }
+        
+        StepRequirement requirement = step.getRequirements().stream()
+            .filter(req -> req.getId().equals(requirementId))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Requirement not found"));
+        
+        requirement.setType(StepRequirementType.valueOf(type));
+        requirement.setBadgeClassId(badgeClassId);
+        requirement.setThirdPartyUrl(thirdPartyUrl);
+        requirement.setThirdPartyJson(thirdPartyJson);
+        requirement.setExperienceName(experienceName);
+        requirement.setExperienceDescription(experienceDescription);
+        requirement.setGroupKey(groupKey);
+        
+        return requirement;
+    }
+
+    @Override
+    @Transactional
+    public void deleteStepRequirement(Long pathwayId, Long stepId, Long requirementId) {
+        Pathway pathway = pathwayRepository.findById(pathwayId).orElseThrow(() -> new RuntimeException("Pathway not found"));
+        PathwayStep step = stepRepository.findById(stepId).orElseThrow(() -> new RuntimeException("Step not found"));
+        
+        // Verify the step belongs to the pathway
+        if (!step.getPathway().getId().equals(pathwayId)) {
+            throw new RuntimeException("Step does not belong to the specified pathway");
+        }
+        
+        step.getRequirements().removeIf(req -> req.getId().equals(requirementId));
     }
 }
 

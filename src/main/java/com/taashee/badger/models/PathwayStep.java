@@ -52,6 +52,10 @@ public class PathwayStep {
     private Long achievementBadgeId; // BadgeClass.id for achievement
     private Boolean achievementExternal = false;
 
+    // Prerequisite Configuration
+    private String prerequisiteRule = "all"; // "all", "any", "n-of-m"
+    private String prerequisiteSteps; // JSON array of step IDs
+
     @OneToMany(mappedBy = "step", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StepRequirement> requirements = new ArrayList<>();
 
@@ -79,6 +83,8 @@ public class PathwayStep {
     public boolean isMilestone() { return milestone; }
     public Long getAchievementBadgeId() { return achievementBadgeId; }
     public Boolean getAchievementExternal() { return achievementExternal; }
+    public String getPrerequisiteRule() { return prerequisiteRule; }
+    public String getPrerequisiteSteps() { return prerequisiteSteps; }
     public List<StepRequirement> getRequirements() { return requirements; }
     public List<StepPrerequisite> getPrerequisites() { return prerequisites; }
 
@@ -96,6 +102,8 @@ public class PathwayStep {
     public void setMilestone(boolean milestone) { this.milestone = milestone; }
     public void setAchievementBadgeId(Long achievementBadgeId) { this.achievementBadgeId = achievementBadgeId; }
     public void setAchievementExternal(Boolean achievementExternal) { this.achievementExternal = achievementExternal; }
+    public void setPrerequisiteRule(String prerequisiteRule) { this.prerequisiteRule = prerequisiteRule; }
+    public void setPrerequisiteSteps(String prerequisiteSteps) { this.prerequisiteSteps = prerequisiteSteps; }
     public void setRequirements(List<StepRequirement> requirements) { this.requirements = requirements; }
     public void setPrerequisites(List<StepPrerequisite> prerequisites) { this.prerequisites = prerequisites; }
 }
