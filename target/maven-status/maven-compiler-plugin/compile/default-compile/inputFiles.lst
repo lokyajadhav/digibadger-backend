@@ -19,12 +19,14 @@ C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\b
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\configs\JwtUtil.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\TermsOfService.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\BadgeInstanceRepository.java
+C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\RequirementVersionRepository.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\configs\JwtAuthenticationFilter.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\Tag.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\StepPrerequisiteRuleRepository.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\BadgeClassDTO.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\controllers\RecipientController.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\OrganizationService.java
+C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\PathwayVersioningService.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\PasswordResetService.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\StepRequirement.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\OrganizationUserRepository.java
@@ -80,6 +82,7 @@ C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\b
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\BadgeClassService.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\BadgeClassRepository.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\OrganizationStaffInvitationRepository.java
+C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\AuditLoggingService.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\EmailVerificationService.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\serviceimpl\OrganizationServiceImpl.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\services\OrganizationStaffInvitationService.java
@@ -99,6 +102,7 @@ C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\b
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\OrganizationStaff.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\PathwayStep.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\StepRequirementRule.java
+C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\RequirementVersion.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\models\BadgeInstanceAwardRequest.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\repositories\TagRepository.java
 C:\Users\Taashee-PC\Desktop\Badger-management\badger\src\main\java\com\taashee\badger\controllers\UserManagementController.java

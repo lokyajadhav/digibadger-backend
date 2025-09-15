@@ -1,10 +1,12 @@
 package com.taashee.badger.models;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class StepVersion {
@@ -14,11 +16,14 @@ public class StepVersion {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pathway_version_id", nullable = false)
+    @JsonBackReference
     private PathwayVersion pathwayVersion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_step_version_id")
-    private StepVersion parentStepVersion;
+    @JoinColumn(name = "original_step_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private PathwayStep originalStep;
+
+    private Long parentStepId;
 
     @Column(nullable = false)
     private String name;
@@ -27,45 +32,89 @@ public class StepVersion {
     private String description;
 
     private String shortCode;
+    private Boolean optionalStep;
+    private Integer orderIndex;
+    private Boolean milestone;
+    private Long achievementBadgeId;
+    private Boolean achievementExternal;
+    private String prerequisiteRule;
+    private String prerequisiteSteps;
 
-    private boolean optionalStep = false;
-
-    private int orderIndex = 0;
-
-    private String alignmentUrl;
-    private String targetCode;
-    private String frameworkName;
-
-    private boolean milestone = false;
-
-    @Column(updatable = false)
     @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public Long getId() { return id; }
-    public PathwayVersion getPathwayVersion() { return pathwayVersion; }
-    public StepVersion getParentStepVersion() { return parentStepVersion; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public String getShortCode() { return shortCode; }
-    public boolean isOptionalStep() { return optionalStep; }
-    public int getOrderIndex() { return orderIndex; }
-    public String getAlignmentUrl() { return alignmentUrl; }
-    public String getTargetCode() { return targetCode; }
-    public String getFrameworkName() { return frameworkName; }
-    public boolean isMilestone() { return milestone; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    @OneToMany(mappedBy = "stepVersion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<RequirementVersion> requirementVersions = new ArrayList<>();
 
+    // Constructors
+    public StepVersion() {}
+
+    public StepVersion(PathwayVersion pathwayVersion, PathwayStep originalStep) {
+        this.pathwayVersion = pathwayVersion;
+        this.originalStep = originalStep;
+        
+        // Copy step data
+        this.parentStepId = originalStep.getParentStep() != null ? originalStep.getParentStep().getId() : null;
+        this.name = originalStep.getName();
+        this.description = originalStep.getDescription();
+        this.shortCode = originalStep.getShortCode();
+        this.optionalStep = originalStep.isOptionalStep();
+        this.orderIndex = originalStep.getOrderIndex();
+        this.milestone = originalStep.isMilestone();
+        this.achievementBadgeId = originalStep.getAchievementBadgeId();
+        this.achievementExternal = originalStep.getAchievementExternal();
+        this.prerequisiteRule = originalStep.getPrerequisiteRule();
+        this.prerequisiteSteps = originalStep.getPrerequisiteSteps();
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public PathwayVersion getPathwayVersion() { return pathwayVersion; }
     public void setPathwayVersion(PathwayVersion pathwayVersion) { this.pathwayVersion = pathwayVersion; }
-    public void setParentStepVersion(StepVersion parentStepVersion) { this.parentStepVersion = parentStepVersion; }
+
+    public PathwayStep getOriginalStep() { return originalStep; }
+    public void setOriginalStep(PathwayStep originalStep) { this.originalStep = originalStep; }
+
+    public Long getParentStepId() { return parentStepId; }
+    public void setParentStepId(Long parentStepId) { this.parentStepId = parentStepId; }
+
+    public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getShortCode() { return shortCode; }
     public void setShortCode(String shortCode) { this.shortCode = shortCode; }
-    public void setOptionalStep(boolean optionalStep) { this.optionalStep = optionalStep; }
-    public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }
-    public void setAlignmentUrl(String alignmentUrl) { this.alignmentUrl = alignmentUrl; }
-    public void setTargetCode(String targetCode) { this.targetCode = targetCode; }
-    public void setFrameworkName(String frameworkName) { this.frameworkName = frameworkName; }
-    public void setMilestone(boolean milestone) { this.milestone = milestone; }
+
+    public Boolean getOptionalStep() { return optionalStep; }
+    public void setOptionalStep(Boolean optionalStep) { this.optionalStep = optionalStep; }
+
+    public Integer getOrderIndex() { return orderIndex; }
+    public void setOrderIndex(Integer orderIndex) { this.orderIndex = orderIndex; }
+
+    public Boolean getMilestone() { return milestone; }
+    public void setMilestone(Boolean milestone) { this.milestone = milestone; }
+
+    public Long getAchievementBadgeId() { return achievementBadgeId; }
+    public void setAchievementBadgeId(Long achievementBadgeId) { this.achievementBadgeId = achievementBadgeId; }
+
+    public Boolean getAchievementExternal() { return achievementExternal; }
+    public void setAchievementExternal(Boolean achievementExternal) { this.achievementExternal = achievementExternal; }
+
+    public String getPrerequisiteRule() { return prerequisiteRule; }
+    public void setPrerequisiteRule(String prerequisiteRule) { this.prerequisiteRule = prerequisiteRule; }
+
+    public String getPrerequisiteSteps() { return prerequisiteSteps; }
+    public void setPrerequisiteSteps(String prerequisiteSteps) { this.prerequisiteSteps = prerequisiteSteps; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public List<RequirementVersion> getRequirementVersions() { return requirementVersions; }
+    public void setRequirementVersions(List<RequirementVersion> requirementVersions) { this.requirementVersions = requirementVersions; }
 }

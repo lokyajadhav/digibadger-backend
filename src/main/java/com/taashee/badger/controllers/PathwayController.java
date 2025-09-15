@@ -4,12 +4,21 @@ import com.taashee.badger.models.Organization;
 import com.taashee.badger.models.Pathway;
 import com.taashee.badger.models.PathwayStep;
 import com.taashee.badger.models.StepRequirement;
+import com.taashee.badger.models.PathwayVersion;
+import com.taashee.badger.models.AuditLog;
+import com.taashee.badger.models.User;
 import com.taashee.badger.repositories.OrganizationRepository;
 import com.taashee.badger.services.PathwayService;
+import com.taashee.badger.services.PathwayVersioningService;
+import com.taashee.badger.services.UserService;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.stream.Collectors;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/organizations/{orgId}/pathways")
@@ -21,6 +30,10 @@ public class PathwayController {
         this.pathwayService = pathwayService;
         this.organizationRepository = organizationRepository;
     }
+
+    @Autowired
+    private UserService userService;
+
 
     private StepRequirementDto toStepRequirementDto(StepRequirement req) {
         return new StepRequirementDto(
@@ -189,6 +202,120 @@ public class PathwayController {
     @DeleteMapping("/{pathwayId}/steps/{stepId}/requirements/{requirementId}")
     public void deleteStepRequirement(@PathVariable Long orgId, @PathVariable Long pathwayId, @PathVariable Long stepId, @PathVariable Long requirementId) {
         pathwayService.deleteStepRequirement(pathwayId, stepId, requirementId);
+    }
+
+    // Pathway Versioning Endpoints
+    @Autowired
+    private PathwayVersioningService pathwayVersioningService;
+    
+
+    public static record PublishPathwayResponse(Integer version, String status, String publishedAt) {}
+
+    @PostMapping("/{pathwayId}/publish")
+    public PublishPathwayResponse publishPathway(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        // TODO: Get current user from security context
+        User currentUser = new User(); // Placeholder - implement proper user extraction
+        currentUser.setId(1L); // Placeholder
+        
+        PathwayVersion publishedVersion = pathwayVersioningService.publishPathway(pathwayId, currentUser);
+        
+        return new PublishPathwayResponse(
+            publishedVersion.getVersion(),
+            publishedVersion.getStatus().name(),
+            publishedVersion.getCreatedAt().toString()
+        );
+    }
+
+    @GetMapping("/{pathwayId}/versions")
+    public List<PathwayVersion> getPathwayVersions(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        return pathwayVersioningService.getPathwayVersions(pathwayId);
+    }
+
+    @GetMapping("/{pathwayId}/versions/{version}")
+    public PathwayVersion getPathwayVersion(@PathVariable Long orgId, @PathVariable Long pathwayId, @PathVariable Integer version) {
+        return pathwayVersioningService.getPathwayVersion(pathwayId, version)
+            .orElseThrow(() -> new RuntimeException("Version not found: " + version));
+    }
+
+    @GetMapping("/{pathwayId}/versions/latest/published")
+    public PathwayVersion getLatestPublishedVersion(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        return pathwayVersioningService.getLatestPublishedVersion(pathwayId)
+            .orElseThrow(() -> new RuntimeException("No published version found"));
+    }
+
+    @PostMapping("/{pathwayId}/versions/draft")
+    public PathwayVersion createNewDraftVersion(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        // Get current user from security context
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = auth.getPrincipal().toString();
+        User currentUser = userService.findByEmail(email);
+        if (currentUser == null) {
+            throw new RuntimeException("User not found: " + email);
+        }
+        
+        return pathwayVersioningService.createNewDraftVersion(pathwayId, currentUser);
+    }
+
+    public static record AuditLogDto(
+        Long id,
+        String action,
+        String entityType,
+        Long entityId,
+        String entityName,
+        String description,
+        String changes,
+        LocalDateTime timestamp,
+        String userEmail,
+        String userName,
+        String pathwayName
+    ) {}
+
+    @GetMapping("/{pathwayId}/audit-logs")
+    public List<AuditLogDto> getPathwayAuditLogs(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        List<AuditLog> auditLogs = pathwayVersioningService.getPathwayAuditLogs(pathwayId);
+        return auditLogs.stream()
+            .map(this::toAuditLogDto)
+            .collect(Collectors.toList());
+    }
+
+    private AuditLogDto toAuditLogDto(AuditLog log) {
+        return new AuditLogDto(
+            log.getId(),
+            log.getAction().name(),
+            log.getEntityType(),
+            log.getEntityId(),
+            log.getEntityName(),
+            log.getDescription(),
+            log.getChanges(),
+            log.getTimestamp(),
+            log.getUser() != null ? log.getUser().getEmail() : null,
+            log.getUser() != null ? (log.getUser().getFirstName() + " " + log.getUser().getLastName()).trim() : null,
+            log.getPathway() != null ? log.getPathway().getName() : null
+        );
+    }
+
+    @GetMapping("/{pathwayId}/version-stats")
+    public PathwayVersioningService.PathwayVersionStats getVersionStats(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        return pathwayVersioningService.getVersionStats(pathwayId);
+    }
+
+    @PostMapping("/{pathwayId}/duplicate")
+    public Pathway duplicatePathway(@PathVariable Long orgId, @PathVariable Long pathwayId) {
+        // Get current user from security context
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = auth.getPrincipal().toString();
+        User currentUser = userService.findByEmail(email);
+        if (currentUser == null) {
+            throw new RuntimeException("User not found: " + email);
+        }
+        
+        return pathwayVersioningService.duplicatePathway(pathwayId, currentUser);
     }
 }
 

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PathwayRepository extends JpaRepository<Pathway, Long> {
     List<Pathway> findByOrganization(Organization organization);
+    List<Pathway> findByOrganizationIdAndNameContaining(Long organizationId, String name);
 }
 
 
