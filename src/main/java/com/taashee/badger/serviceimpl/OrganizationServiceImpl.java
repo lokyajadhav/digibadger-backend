@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -161,18 +162,38 @@ public class OrganizationServiceImpl implements OrganizationService {
     public List<Organization> getOrganizationsForUser(String email) {
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) return List.of();
+        
+        // Check for staff relationships (ISSUERs)
         List<com.taashee.badger.models.OrganizationStaff> staffList = organizationStaffRepository.findByUserId(user.getId());
-        if (staffList.isEmpty()) return List.of();
-        // Return only minimal organization info to avoid proxy issues
-        return staffList.stream()
-            .map(s -> {
-                Organization org = new Organization();
-                org.setId(s.getOrganization().getId());
-                org.setNameEnglish(s.getOrganization().getNameEnglish());
-                org.setEmail(s.getOrganization().getEmail());
-                org.setArchived(s.getOrganization().getArchived());
-                return org;
-            })
+        
+        // Check for user relationships (regular users)
+        List<com.taashee.badger.models.OrganizationUser> userList = organizationUserRepository.findByUserId(user.getId());
+        
+        // Combine both lists
+        List<Organization> organizations = new ArrayList<>();
+        
+        // Add organizations from staff relationships
+        for (com.taashee.badger.models.OrganizationStaff staff : staffList) {
+            Organization org = new Organization();
+            org.setId(staff.getOrganization().getId());
+            org.setNameEnglish(staff.getOrganization().getNameEnglish());
+            org.setEmail(staff.getOrganization().getEmail());
+            org.setArchived(staff.getOrganization().getArchived());
+            organizations.add(org);
+        }
+        
+        // Add organizations from user relationships
+        for (com.taashee.badger.models.OrganizationUser orgUser : userList) {
+            Organization org = new Organization();
+            org.setId(orgUser.getOrganization().getId());
+            org.setNameEnglish(orgUser.getOrganization().getNameEnglish());
+            org.setEmail(orgUser.getOrganization().getEmail());
+            org.setArchived(orgUser.getOrganization().getArchived());
+            organizations.add(org);
+        }
+        
+        // Remove duplicates and return
+        return organizations.stream()
             .distinct()
             .toList();
     }

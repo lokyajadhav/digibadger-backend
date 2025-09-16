@@ -106,4 +106,26 @@ public class OrganizationController {
     public ResponseEntity<ApiResponse<String>> testEndpoint() {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Test endpoint working", "Hello from organization controller", null));
     }
+
+    // Debug endpoint to test organization lookup for any user
+    @Operation(summary = "Debug organization lookup", description = "Debug endpoint to test organization lookup for current user")
+    @GetMapping("/debug/my-organizations")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> debugMyOrganizations() {
+        String email = (String) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Organization> orgs = organizationService.getOrganizationsForUser(email);
+        
+        Map<String, Object> debugInfo = Map.of(
+            "userEmail", email,
+            "organizationsFound", orgs.size(),
+            "organizations", orgs.stream().map(org -> Map.of(
+                "id", org.getId(),
+                "name", org.getNameEnglish(),
+                "email", org.getEmail(),
+                "archived", org.getArchived()
+            )).collect(java.util.stream.Collectors.toList()),
+            "timestamp", System.currentTimeMillis()
+        );
+        
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Debug info", debugInfo, null));
+    }
 } 
