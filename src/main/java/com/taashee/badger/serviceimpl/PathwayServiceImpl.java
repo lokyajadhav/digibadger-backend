@@ -9,6 +9,9 @@ import com.taashee.badger.models.User;
 import com.taashee.badger.models.AuditLog;
 import com.taashee.badger.models.StepRequirement;
 import com.taashee.badger.models.StepRequirementType;
+import com.taashee.badger.models.PathwayProgress;
+import com.taashee.badger.models.PathwayGroupSubscription;
+import com.taashee.badger.models.StepProgress;
 import com.taashee.badger.repositories.PathwayRepository;
 import com.taashee.badger.repositories.PathwayStepRepository;
 import com.taashee.badger.repositories.PathwayVersionRepository;
@@ -16,6 +19,9 @@ import com.taashee.badger.repositories.AuditLogRepository;
 import com.taashee.badger.repositories.StepRequirementRepository;
 import com.taashee.badger.repositories.StepVersionRepository;
 import com.taashee.badger.repositories.UserRepository;
+import com.taashee.badger.repositories.PathwayProgressRepository;
+import com.taashee.badger.repositories.PathwayGroupSubscriptionRepository;
+import com.taashee.badger.repositories.StepProgressRepository;
 import com.taashee.badger.services.PathwayService;
 import java.util.List;
 import java.util.Optional;
@@ -35,11 +41,16 @@ public class PathwayServiceImpl implements PathwayService {
     private final StepRequirementRepository stepRequirementRepository;
     private final StepVersionRepository stepVersionRepository;
     private final UserRepository userRepository;
+    private final PathwayProgressRepository pathwayProgressRepository;
+    private final PathwayGroupSubscriptionRepository pathwayGroupSubscriptionRepository;
+    private final StepProgressRepository stepProgressRepository;
 
     public PathwayServiceImpl(PathwayRepository pathwayRepository, PathwayStepRepository stepRepository, 
                             PathwayVersionRepository versionRepository, AuditLogRepository auditRepository,
                             StepRequirementRepository stepRequirementRepository, StepVersionRepository stepVersionRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository, PathwayProgressRepository pathwayProgressRepository,
+                            PathwayGroupSubscriptionRepository pathwayGroupSubscriptionRepository,
+                            StepProgressRepository stepProgressRepository) {
         this.pathwayRepository = pathwayRepository;
         this.stepRepository = stepRepository;
         this.versionRepository = versionRepository;
@@ -47,6 +58,9 @@ public class PathwayServiceImpl implements PathwayService {
         this.stepRequirementRepository = stepRequirementRepository;
         this.stepVersionRepository = stepVersionRepository;
         this.userRepository = userRepository;
+        this.pathwayProgressRepository = pathwayProgressRepository;
+        this.pathwayGroupSubscriptionRepository = pathwayGroupSubscriptionRepository;
+        this.stepProgressRepository = stepProgressRepository;
     }
 
     private User getCurrentUser() {
@@ -398,12 +412,26 @@ public class PathwayServiceImpl implements PathwayService {
                 (pathway.getDescription() != null ? pathway.getDescription() : ""));
         }
         
+        // Delete all step progress records for this pathway first to avoid foreign key constraint violations
+        List<StepVersion> stepVersions = stepVersionRepository.findByPathway(pathway);
+        for (StepVersion stepVersion : stepVersions) {
+            List<StepProgress> stepProgressRecords = stepProgressRepository.findByStepVersion(stepVersion);
+            stepProgressRepository.deleteAll(stepProgressRecords);
+        }
+        
+        // Delete all pathway progress records for this pathway to avoid foreign key constraint violations
+        List<PathwayProgress> pathwayProgressRecords = pathwayProgressRepository.findByPathway(pathway);
+        pathwayProgressRepository.deleteAll(pathwayProgressRecords);
+        
+        // Delete all pathway group subscriptions for this pathway to avoid foreign key constraint violations
+        List<PathwayGroupSubscription> pathwaySubscriptions = pathwayGroupSubscriptionRepository.findByPathway(pathway);
+        pathwayGroupSubscriptionRepository.deleteAll(pathwaySubscriptions);
+        
         // Delete all audit logs for this pathway first to avoid foreign key constraint violations
         List<AuditLog> auditLogs = auditRepository.findByPathway(pathway);
         auditRepository.deleteAll(auditLogs);
         
         // Delete all step versions for this pathway first to avoid foreign key constraint violations
-        List<StepVersion> stepVersions = stepVersionRepository.findByPathway(pathway);
         stepVersionRepository.deleteAll(stepVersions);
         
         // Delete all steps for this pathway (which will also delete step requirements)
