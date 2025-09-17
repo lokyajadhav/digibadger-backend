@@ -128,4 +128,10 @@ public class PublicController {
         }
         return ResponseEntity.ok(new ApiResponse<>(200, "Success", agreement, null));
     }
+
+    @Operation(summary = "Health check", description = "Simple health check endpoint for frontend connectivity testing")
+    @GetMapping("/health")
+    public ResponseEntity<ApiResponse<String>> healthCheck() {
+        return ResponseEntity.ok(new ApiResponse<>(200, "Backend is healthy", "OK", null));
+    }
 } 

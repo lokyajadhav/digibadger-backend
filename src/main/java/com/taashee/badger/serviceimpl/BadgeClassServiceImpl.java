@@ -375,11 +375,11 @@ public class BadgeClassServiceImpl implements BadgeClassService {
                 throw new RuntimeException("EducationProgramIdentifierExtension is required for regular badges");
             }
         }
-        badgeClass.setName(dto.name);
+        badgeClass.setName(truncateString(dto.name, 255));
         badgeClass.setImage(dto.image);
-        badgeClass.setDescription(dto.description);
-        badgeClass.setCriteriaText(dto.criteriaText);
-        badgeClass.setCriteriaUrl(dto.criteriaUrl);
+        badgeClass.setDescription(dto.description); // TEXT field, no truncation needed
+        badgeClass.setCriteriaText(dto.criteriaText); // TEXT field, no truncation needed
+        badgeClass.setCriteriaUrl(truncateString(dto.criteriaUrl, 500));
         badgeClass.setFormal(dto.formal);
         badgeClass.setIsPrivate(dto.isPrivate);
         badgeClass.setNarrativeRequired(dto.narrativeRequired);
@@ -388,17 +388,17 @@ public class BadgeClassServiceImpl implements BadgeClassService {
         badgeClass.setIsMicroCredentials(dto.isMicroCredentials);
         badgeClass.setDirectAwardingDisabled(dto.directAwardingDisabled);
         badgeClass.setSelfEnrollmentDisabled(dto.selfEnrollmentDisabled);
-        badgeClass.setParticipation(dto.participation);
-        badgeClass.setAssessmentType(dto.assessmentType);
+        badgeClass.setParticipation(truncateString(dto.participation, 255));
+        badgeClass.setAssessmentType(truncateString(dto.assessmentType, 255));
         badgeClass.setAssessmentIdVerified(dto.assessmentIdVerified);
         badgeClass.setAssessmentSupervised(dto.assessmentSupervised);
-        badgeClass.setQualityAssuranceName(dto.qualityAssuranceName);
-        badgeClass.setQualityAssuranceUrl(dto.qualityAssuranceUrl);
-        badgeClass.setQualityAssuranceDescription(dto.qualityAssuranceDescription);
+        badgeClass.setQualityAssuranceName(truncateString(dto.qualityAssuranceName, 255));
+        badgeClass.setQualityAssuranceUrl(truncateString(dto.qualityAssuranceUrl, 500));
+        badgeClass.setQualityAssuranceDescription(dto.qualityAssuranceDescription); // TEXT field, no truncation needed
         badgeClass.setGradeAchievedRequired(dto.gradeAchievedRequired);
         badgeClass.setStackable(dto.stackable);
         badgeClass.setEqfNlqfLevelVerified(dto.eqfNlqfLevelVerified);
-        badgeClass.setBadgeClassType(dto.badgeClassType);
+        badgeClass.setBadgeClassType(truncateString(dto.badgeClassType, 100));
         
         // Parse expiration period from string to Duration
         if (dto.expirationPeriod != null && !dto.expirationPeriod.trim().isEmpty()) {
@@ -475,6 +475,17 @@ public class BadgeClassServiceImpl implements BadgeClassService {
                 throw new RuntimeException("Failed to serialize extensions", e);
             }
         }
+    }
+
+    private String truncateString(String value, int maxLength) {
+        if (value == null) {
+            return null;
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        logger.warn("Truncating string field from {} to {} characters: {}", value.length(), maxLength, value.substring(0, Math.min(50, value.length())));
+        return value.substring(0, maxLength);
     }
 
     @Override

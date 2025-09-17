@@ -7,9 +7,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.util.List;
 import java.util.Set;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.hibernate.annotations.Type;
-import com.taashee.badger.models.Organization;
 
 @Entity
 public class BadgeClass {
@@ -21,11 +18,15 @@ public class BadgeClass {
     @JoinColumn(name = "organization_id")
     private Organization organization;
 
+    @Column(length = 255)
     private String name;
     @Column(columnDefinition = "TEXT")
     private String image;
+    @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
     private String criteriaText;
+    @Column(length = 500)
     private String criteriaUrl;
     private boolean formal;
     private boolean isPrivate;
@@ -35,17 +36,24 @@ public class BadgeClass {
     private boolean isMicroCredentials;
     private boolean directAwardingDisabled;
     private boolean selfEnrollmentDisabled;
+    @Column(length = 255)
     private String participation;
+    @Column(length = 255)
     private String assessmentType;
     private boolean assessmentIdVerified;
     private boolean assessmentSupervised;
+    @Column(length = 255)
     private String qualityAssuranceName;
+    @Column(length = 500)
     private String qualityAssuranceUrl;
+    @Column(columnDefinition = "TEXT")
     private String qualityAssuranceDescription;
     private boolean gradeAchievedRequired;
     private boolean stackable;
     private boolean eqfNlqfLevelVerified;
+    @Column(length = 100)
     private String badgeClassType;
+    @Column(columnDefinition = "TEXT")
     private String oldJson; // For legacy/compatibility
     private Duration expirationPeriod;
     private LocalDateTime expirationDate;
